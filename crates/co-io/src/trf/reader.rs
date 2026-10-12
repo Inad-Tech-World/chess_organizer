@@ -44,6 +44,7 @@ pub fn read(text: &str) -> Result<TrfImport, TrfError> {
     let mut settings = Settings::default();
     let mut kind = TournamentKind::default();
     let mut baku = false;
+    let mut initial_color_given = false;
     let mut declared_rounds: Option<RoundNo> = None;
     let mut players: Vec<PlayerLine> = Vec::new();
     let mut bye_records: Vec<(ByeKind, RoundNo, Vec<u32>)> = Vec::new();
@@ -53,9 +54,9 @@ pub fn read(text: &str) -> Result<TrfImport, TrfError> {
     let mut national: BTreeMap<u32, u16> = BTreeMap::new();
     let mut warnings = Vec::new();
 
-    for (idx, raw) in text.lines().enumerate() {
+    // TRF lines end in CR (spec), CRLF or LF depending on the program.
+    for (idx, raw) in text.split('\n').flat_map(|l| l.split('\r')).enumerate() {
         let lineno = idx + 1;
-        let raw = raw.trim_end_matches('\r');
         if raw.trim().is_empty() || raw.starts_with("###") {
             continue;
         }
@@ -95,16 +96,16 @@ pub fn read(text: &str) -> Result<TrfImport, TrfError> {
                 );
             }
             "152" => match line.rest(5).chars().next().map(|c| c.to_ascii_uppercase()) {
-                Some('W') => settings.initial_color = Color::White,
-                Some('B') => settings.initial_color = Color::Black,
+                Some('W') => (settings.initial_color, initial_color_given) = (Color::White, true),
+                Some('B') => (settings.initial_color, initial_color_given) = (Color::Black, true),
                 _ => warnings.push(format!("line {lineno}: unknown initial colour")),
             },
             "XXC" => {
                 let rest = line.rest(5).to_ascii_lowercase();
                 if rest.contains("black1") {
-                    settings.initial_color = Color::Black;
+                    (settings.initial_color, initial_color_given) = (Color::Black, true);
                 } else if rest.contains("white1") {
-                    settings.initial_color = Color::White;
+                    (settings.initial_color, initial_color_given) = (Color::White, true);
                 }
             }
             "162" => parse_point_system(&line, &mut settings.points).map_err(syntax)?,
@@ -301,12 +302,23 @@ pub fn read(text: &str) -> Result<TrfImport, TrfError> {
 
     for r in 1..=present_rounds {
         let pairings = build_round(&t, &players, r, &mut warnings)?;
+        let (pairings, matches) = if t.kind.is_team() && !t.teams.is_empty() {
+            team_matches(&t, pairings, r, &mut warnings)
+        } else {
+            (pairings, Vec::new())
+        };
         t.apply(&Event::RoundPaired {
             round: r,
             pairings,
-            matches: Vec::new(),
+            matches,
             method: PairingMethod::Manual,
         })?;
+    }
+
+    if !initial_color_given && let Some(c) = infer_initial_color(&t) {
+        let mut s = t.settings.clone();
+        s.initial_color = c;
+        t.apply(&Event::SettingsUpdated { settings: s })?;
     }
 
     for (kind, round, ids) in bye_records {
@@ -428,6 +440,44 @@ fn build_round(
     Ok(pairings)
 }
 
+/// TRF-2026 record 152 may be omitted when it equals the colour of the
+/// highest-ranked player paired in the first round with games; recover it
+/// from that round (the effective pairing number's parity decides).
+fn infer_initial_color(t: &Tournament) -> Option<Color> {
+    let first = t
+        .rounds
+        .iter()
+        .position(|r| r.pairings.iter().any(|p| p.board().is_some()))?;
+    let mut effective = 0usize;
+    for p in t.players_by_rank() {
+        let participated = t.rounds[..=first].iter().any(|r| {
+            matches!(
+                r.entry_for(p.id),
+                Some(Pairing::Game { .. })
+                    | Some(Pairing::Bye {
+                        kind: ByeKind::PairingAllocated,
+                        ..
+                    })
+            )
+        });
+        if !participated {
+            continue;
+        }
+        if let Some((color, _)) = t.rounds[first]
+            .entry_for(p.id)
+            .and_then(|e| e.side_of(p.id))
+        {
+            return Some(if effective % 2 == 1 {
+                color.opposite()
+            } else {
+                color
+            });
+        }
+        effective += 1;
+    }
+    None
+}
+
 fn inverse(r: SideResult) -> SideResult {
     match r {
         SideResult::Win => SideResult::Loss,
@@ -523,6 +573,119 @@ fn parse_num(s: &str) -> Result<u32, String> {
 }
 
 /// Player ids in 4-character fields starting at `col`, every 5 columns.
+/// Groups a team event's games into matches: games between the same two
+/// teams form one match, whose home team has White on its first board.
+/// A team whose players all have the pairing-allocated bye has a bye match.
+/// Other entries (requested byes, absences) stay individual.
+fn team_matches(
+    t: &Tournament,
+    pairings: Vec<Pairing>,
+    round: RoundNo,
+    warnings: &mut Vec<String>,
+) -> (Vec<Pairing>, Vec<TeamMatch>) {
+    let team_of = |id: PlayerId| {
+        t.teams
+            .iter()
+            .find(|tm| tm.members.contains(&id))
+            .map(|tm| tm.id)
+    };
+    let mut groups: Vec<((TeamId, TeamId), Vec<Pairing>)> = Vec::new();
+    let mut byes: Vec<TeamId> = Vec::new();
+    let mut rest = Vec::new();
+    let mut games: Vec<Pairing> = pairings
+        .iter()
+        .filter(|p| p.board().is_some())
+        .cloned()
+        .collect();
+    games.sort_by_key(Pairing::board);
+    for g in games {
+        let Pairing::Game { white, black, .. } = g else {
+            continue;
+        };
+        match (team_of(white), team_of(black)) {
+            (Some(a), Some(b)) if a != b => {
+                let key = (a.min(b), a.max(b));
+                match groups.iter_mut().find(|(k, _)| *k == key) {
+                    Some((_, v)) => v.push(g),
+                    None => groups.push((key, vec![g])),
+                }
+            }
+            _ => {
+                warnings.push(format!(
+                    "round {round}: a game is not between two teams; kept as an individual game"
+                ));
+                rest.push(g);
+            }
+        }
+    }
+    for p in pairings.iter().filter(|p| p.board().is_none()) {
+        if let Pairing::Bye {
+            player,
+            kind: ByeKind::PairingAllocated,
+        } = *p
+            && let Some(team) = team_of(player)
+        {
+            if !byes.contains(&team) {
+                byes.push(team);
+            }
+            continue;
+        }
+        rest.push(p.clone());
+    }
+    let mut matches = Vec::new();
+    for (_, games) in groups {
+        let Some(Pairing::Game { white, .. }) = games.first().cloned() else {
+            continue;
+        };
+        let home = team_of(white).expect("grouped by team");
+        let mut m = TeamMatch {
+            number: matches.len() as u16 + 1,
+            home,
+            away: None,
+            home_lineup: Vec::new(),
+            away_lineup: Vec::new(),
+            games: Vec::new(),
+        };
+        for (i, g) in games.into_iter().enumerate() {
+            let Pairing::Game {
+                white,
+                black,
+                result,
+                ..
+            } = g
+            else {
+                continue;
+            };
+            let (h, a) = if team_of(white) == Some(home) {
+                (white, black)
+            } else {
+                (black, white)
+            };
+            m.away = team_of(a);
+            m.home_lineup.push(h);
+            m.away_lineup.push(a);
+            m.games.push(Pairing::Game {
+                board: i as u16 + 1,
+                white,
+                black,
+                result,
+            });
+        }
+        matches.push(m);
+    }
+    for team in byes {
+        matches.push(TeamMatch {
+            number: matches.len() as u16 + 1,
+            home: team,
+            away: None,
+            home_lineup: Vec::new(),
+            away_lineup: Vec::new(),
+            games: Vec::new(),
+        });
+    }
+    (rest, matches)
+}
+
 fn ids_from(line: &Line, mut col: usize) -> Vec<u32> {
     let mut ids = Vec::new();
     while col <= line.len() {

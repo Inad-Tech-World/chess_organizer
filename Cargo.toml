@@ -48,10 +48,17 @@ chrono = { version = "0.4", default-features = false, features = ["std", "clock"
 clap = { version = "4", features = ["derive"] }
 fluent-bundle = "0.16"
 insta = "1"
+krilla = "0.8"
+ttf-parser = "0.25"
+quick-xml = "0.42"
+zip = { version = "9", default-features = false, features = ["deflate"] }
+csv = "1"
+rust_xlsxwriter = "0.99"
 minijinja = { version = "2", features = ["loader"] }
 rusqlite = { version = "0.40", features = ["bundled"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+smallvec = { version = "1", features = ["union", "const_generics"] }
 tempfile = "3"
 thiserror = "2"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "net"] }

@@ -1,15 +1,31 @@
 <script lang="ts">
   import { ask } from '@tauri-apps/plugin-dialog';
   import { api } from '$lib/api';
-  import type { Team } from '$lib/api/types';
+  import { tbDisplay, type Team, type TeamStandings } from '$lib/api/types';
+  import { fmtPoints } from '$lib/format';
+  import { showError } from '$lib/stores/app.svelte';
   import Dialog from '$lib/components/Dialog.svelte';
-  import PhaseBanner from '$lib/components/PhaseBanner.svelte';
   import { t } from '$lib/i18n/index.svelte';
   import { isTeamKind } from '$lib/kinds';
   import { clone } from '$lib/players';
   import { app, run } from '$lib/stores/app.svelte';
 
   const tour = $derived(app.view?.tournament);
+  let standings = $state<TeamStandings | null>(null);
+
+  // Team standings follow every change to the tournament.
+  $effect(() => {
+    const t = app.view?.tournament;
+    if (!t || t.rounds.length === 0 || !isTeamKind(t.kind)) {
+      standings = null;
+      return;
+    }
+    api.teamStandings().then((s) => (standings = s)).catch(showError);
+  });
+
+  function teamName(id: number) {
+    return tour?.teams.find((x) => x.id === id)?.name ?? `#${id}`;
+  }
   let editing = $state<Team | null>(null);
   let open = $state(false);
 
@@ -53,7 +69,6 @@
       <div class="spacer"></div>
       <button class="primary" onclick={() => edit(null)}>{t('teams-add')}</button>
     </header>
-    <PhaseBanner phase={3} feature={t('teams-feature')} />
     {#if !isTeamKind(tour.kind)}
       <p class="muted">{t('teams-individual-note')}</p>
     {/if}
@@ -80,6 +95,30 @@
         </tbody>
       </table>
     </section>
+    {#if standings}
+      <section class="card">
+        <h2>{t('teams-standings', { round: standings.after_round })}</h2>
+        <table class="simple">
+          <thead>
+            <tr>
+              <th>{t('col-rank')}</th><th>{t('teams-name')}</th><th>{t('col-mp')}</th><th>{t('col-gp')}</th>
+              {#each standings.tiebreak_labels as l}<th>{l}</th>{/each}
+            </tr>
+          </thead>
+          <tbody>
+            {#each standings.rows as r}
+              <tr>
+                <td>{r.tied_with_previous ? '' : r.rank}</td>
+                <td>{teamName(r.team)}</td>
+                <td dir="ltr">{fmtPoints(r.match_points)}</td>
+                <td dir="ltr">{fmtPoints(r.game_points)}</td>
+                {#each r.tiebreaks as v}<td dir="ltr">{tbDisplay(v)}</td>{/each}
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </section>
+    {/if}
   </div>
 
   <Dialog bind:open title={editing?.id ? t('teams-edit') : t('teams-add')} width="560px">

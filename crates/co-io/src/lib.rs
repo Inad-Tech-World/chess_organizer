@@ -5,6 +5,7 @@ pub mod fide_list;
 pub mod national_list;
 pub mod render;
 pub mod report;
+pub mod sample;
 pub mod swiss_manager_import;
 pub mod trf;
 

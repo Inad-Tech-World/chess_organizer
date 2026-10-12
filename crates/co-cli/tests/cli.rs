@@ -50,15 +50,20 @@ fn renders_standings() {
 }
 
 #[test]
-fn planned_features_exit_with_code_3() {
+fn pairs_the_next_round_like_bbp_pairings() {
+    // Same output as `bbpPairings --dutch sample.trf -p` (player 3 has a half-point bye).
     let out = co()
         .args(["pair", "--dutch"])
         .arg(sample())
         .arg("-p")
         .output()
         .unwrap();
-    assert_eq!(out.status.code(), Some(3));
-    assert!(String::from_utf8_lossy(&out.stderr).contains("Phase 1"));
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert_eq!(String::from_utf8(out.stdout).unwrap(), "3\n5 1\n2 4\n6 7\n");
 }
 
 #[test]

@@ -10,7 +10,11 @@ authors.workspace = true
 
 [dependencies]
 co-core.workspace = true
+co-rating.workspace = true
 serde.workspace = true
 
 [lints]
 workspace = true
+
+[dev-dependencies]
+co-io = { path = "../co-io" }

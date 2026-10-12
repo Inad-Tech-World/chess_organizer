@@ -1,17 +1,21 @@
 import type { TournamentKind } from '$lib/api/types';
 
-/** Tournament types offered in the UI, with the phase each one's pairing lands in. */
-export const KINDS: { id: string; kind: TournamentKind; phase: number }[] = [
-  { id: 'swiss-dutch', kind: { type: 'Swiss', system: 'Dutch' }, phase: 1 },
-  { id: 'swiss-dubov', kind: { type: 'Swiss', system: 'Dubov' }, phase: 4 },
-  { id: 'swiss-burstein', kind: { type: 'Swiss', system: 'Burstein' }, phase: 4 },
-  { id: 'swiss-lim', kind: { type: 'Swiss', system: 'Lim' }, phase: 4 },
-  { id: 'swiss-monrad', kind: { type: 'Swiss', system: 'Monrad' }, phase: 4 },
-  { id: 'rr', kind: { type: 'RoundRobin', double: false }, phase: 2 },
-  { id: 'rr-double', kind: { type: 'RoundRobin', double: true }, phase: 2 },
-  { id: 'team-swiss', kind: { type: 'TeamSwiss', system: 'Dutch' }, phase: 3 },
-  { id: 'team-rr', kind: { type: 'TeamRoundRobin', double: false }, phase: 3 },
-  { id: 'team-rr-double', kind: { type: 'TeamRoundRobin', double: true }, phase: 3 }
+/**
+ * Tournament types offered in the UI. `note` names a message shown in the
+ * setup screen, e.g. for engines that have no endorsed reference to be
+ * checked against.
+ */
+export const KINDS: { id: string; kind: TournamentKind; note?: string }[] = [
+  { id: 'swiss-dutch', kind: { type: 'Swiss', system: 'Dutch' } },
+  { id: 'swiss-dubov', kind: { type: 'Swiss', system: 'Dubov' }, note: 'setup-note-unverified' },
+  { id: 'swiss-burstein', kind: { type: 'Swiss', system: 'Burstein' } },
+  { id: 'swiss-lim', kind: { type: 'Swiss', system: 'Lim' }, note: 'setup-note-unverified' },
+  { id: 'swiss-monrad', kind: { type: 'Swiss', system: 'Monrad' }, note: 'setup-note-monrad' },
+  { id: 'rr', kind: { type: 'RoundRobin', double: false } },
+  { id: 'rr-double', kind: { type: 'RoundRobin', double: true } },
+  { id: 'team-swiss', kind: { type: 'TeamSwiss', system: 'Dutch' }, note: 'setup-note-team-swiss' },
+  { id: 'team-rr', kind: { type: 'TeamRoundRobin', double: false } },
+  { id: 'team-rr-double', kind: { type: 'TeamRoundRobin', double: true } }
 ];
 
 export function kindId(kind: TournamentKind): string {

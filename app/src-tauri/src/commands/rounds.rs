@@ -153,3 +153,47 @@ pub async fn result_set(
         },
     )
 }
+
+/// Result of one board in a team match.
+#[tauri::command]
+pub async fn team_result_set(
+    window: WebviewWindow,
+    state: State<'_, AppState>,
+    round: RoundNo,
+    match_number: u16,
+    board: u16,
+    result: Option<GameResult>,
+) -> CmdResult<TournamentView> {
+    apply(
+        &state,
+        &window,
+        Event::TeamGameResultEntered {
+            round,
+            match_number,
+            board,
+            result,
+        },
+    )
+}
+
+/// One team's line-up (board order) in a match; the board games are rebuilt.
+#[tauri::command]
+pub async fn lineup_set(
+    window: WebviewWindow,
+    state: State<'_, AppState>,
+    round: RoundNo,
+    match_number: u16,
+    team: co_core::TeamId,
+    lineup: Vec<PlayerId>,
+) -> CmdResult<TournamentView> {
+    apply(
+        &state,
+        &window,
+        Event::LineupSet {
+            round,
+            match_number,
+            team,
+            lineup,
+        },
+    )
+}

@@ -4,8 +4,11 @@
 //! [`crate::render`] turn it into HTML (screen, print, publishing site), PDF,
 //! CSV or XLSX, so every output shows the same content.
 
+mod more;
+pub use more::prize_winners;
+
 use crate::Result;
-use co_core::{ByeKind, Pairing, Player, PlayerId, Points, RoundNo, Tournament, not_yet, scoring};
+use co_core::{ByeKind, Pairing, Player, PlayerId, Points, RoundNo, Tournament, scoring};
 use co_i18n::Translator;
 use serde::{Deserialize, Serialize};
 
@@ -22,21 +25,8 @@ pub enum ListKind {
     Prizes,
     TeamRosters,
     RatingReport,
-}
-
-impl ListKind {
-    /// Phase in which the list lands, or `None` if it is available now.
-    pub fn planned_phase(self) -> Option<u8> {
-        match self {
-            ListKind::StartingRank
-            | ListKind::Alphabetical
-            | ListKind::Pairings { .. }
-            | ListKind::Standings { .. } => None,
-            ListKind::Crosstable { .. } => Some(1),
-            ListKind::Scorecards | ListKind::BoardCards { .. } | ListKind::RatingReport => Some(2),
-            ListKind::Prizes | ListKind::TeamRosters => Some(3),
-        }
-    }
+    TeamPairings { round: RoundNo },
+    TeamStandings { round: RoundNo },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -80,12 +70,14 @@ pub fn build(kind: ListKind, t: &Tournament, tr: &Translator) -> Result<Report> 
         ListKind::Alphabetical => player_list(t, tr, true),
         ListKind::Pairings { round } => pairings(t, tr, round)?,
         ListKind::Standings { round } => standings(t, tr, round)?,
-        ListKind::Crosstable { .. } => return Ok(not_yet!("Crosstable", 1)?),
-        ListKind::Scorecards => return Ok(not_yet!("Scorecards", 2)?),
-        ListKind::BoardCards { .. } => return Ok(not_yet!("Board cards", 2)?),
-        ListKind::RatingReport => return Ok(not_yet!("Rating report list", 2)?),
-        ListKind::Prizes => return Ok(not_yet!("Prize list", 3)?),
-        ListKind::TeamRosters => return Ok(not_yet!("Team rosters", 3)?),
+        ListKind::Crosstable { round } => more::crosstable(t, tr, round)?,
+        ListKind::Scorecards => more::scorecards(t, tr),
+        ListKind::BoardCards { round } => more::board_cards(t, tr, round)?,
+        ListKind::RatingReport => more::rating_report(t, tr)?,
+        ListKind::Prizes => more::prizes(t, tr)?,
+        ListKind::TeamRosters => more::team_rosters(t, tr),
+        ListKind::TeamPairings { round } => more::team_pairings(t, tr, round)?,
+        ListKind::TeamStandings { round } => more::team_standings(t, tr, round)?,
     };
     report.lang = tr.lang().to_string();
     report.rtl = tr.is_rtl();
@@ -95,7 +87,7 @@ pub fn build(kind: ListKind, t: &Tournament, tr: &Translator) -> Result<Report> 
     Ok(report)
 }
 
-fn empty(title: String, columns: Vec<Column>) -> Report {
+pub(crate) fn empty(title: String, columns: Vec<Column>) -> Report {
     Report {
         lang: String::new(),
         rtl: false,
@@ -110,7 +102,7 @@ fn empty(title: String, columns: Vec<Column>) -> Report {
     }
 }
 
-fn col(tr: &Translator, id: &str, align: Align, width: u16) -> Column {
+pub(crate) fn col(tr: &Translator, id: &str, align: Align, width: u16) -> Column {
     Column {
         label: tr.t(id),
         align,
@@ -151,11 +143,11 @@ pub fn fmt_points(p: Points) -> String {
     }
 }
 
-fn title_str(p: &Player) -> String {
+pub(crate) fn title_str(p: &Player) -> String {
     p.title.map(|t| t.as_str().to_string()).unwrap_or_default()
 }
 
-fn rating_str(t: &Tournament, p: &Player) -> String {
+pub(crate) fn rating_str(t: &Tournament, p: &Player) -> String {
     p.rating(t.settings.rating_type)
         .map(|r| r.to_string())
         .unwrap_or_default()
@@ -319,19 +311,6 @@ fn standings(t: &Tournament, tr: &Translator, round: RoundNo) -> Result<Report> 
         cells.extend(row.tiebreaks.iter().map(|v| v.display()));
         r.rows.push(cells);
     }
-    r.notes = s
-        .pending
-        .iter()
-        .map(|(label, phase)| {
-            tr.t_args(
-                "note-tiebreak-planned",
-                &[
-                    ("label", label.as_str().into()),
-                    ("phase", u32::from(*phase).into()),
-                ],
-            )
-        })
-        .collect();
     Ok(r)
 }
 

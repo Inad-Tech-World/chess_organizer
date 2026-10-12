@@ -29,6 +29,7 @@ pub fn build<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
             "Open in New Window…",
             Some("CmdOrCtrl+Shift+O"),
         )?)
+        .item(&item("file.sample", "Open Sample Tournament", None)?)
         .separator()
         .item(&item(
             "file.setup",

@@ -9,6 +9,10 @@ export const TRF: Filter[] = [{ name: 'FIDE Tournament Report File', extensions:
 export const FIDE_LIST: Filter[] = [{ name: 'FIDE rating list', extensions: ['xml', 'zip', 'txt'] }];
 export const CSV: Filter[] = [{ name: 'CSV', extensions: ['csv', 'txt'] }];
 export const ANY: Filter[] = [{ name: 'All files', extensions: ['*'] }];
+export const EXPORTED: Filter[] = [
+  { name: 'TRF or player list', extensions: ['trf', 'txt', 'csv', 'tsv'] },
+  ...ANY
+];
 
 export async function pickOpen(filters: Filter[]): Promise<string | null> {
   const r = await open({ multiple: false, directory: false, filters });

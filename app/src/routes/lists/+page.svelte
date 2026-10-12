@@ -2,31 +2,35 @@
   import { page } from '$app/state';
   import { api } from '$lib/api';
   import type { ExportFormat, ListKind } from '$lib/api/types';
-  import PhaseBanner from '$lib/components/PhaseBanner.svelte';
   import { pickSave, suggestName } from '$lib/files';
   import { i18n, LANGUAGES, t } from '$lib/i18n/index.svelte';
-  import { app, isCommandError, notify, run, showError } from '$lib/stores/app.svelte';
+  import { app, notify, run, showError } from '$lib/stores/app.svelte';
 
-  type ListDef = { id: ListKind['type']; key: string; round: boolean; phase: number | null };
+  type ListDef = { id: ListKind['type']; key: string; round: boolean; team?: boolean };
 
-  const LISTS: ListDef[] = [
-    { id: 'StartingRank', key: 'list-starting-rank', round: false, phase: null },
-    { id: 'Alphabetical', key: 'list-alphabetical', round: false, phase: null },
-    { id: 'Pairings', key: 'list-name-pairings', round: true, phase: null },
-    { id: 'Standings', key: 'list-name-standings', round: true, phase: null },
-    { id: 'Crosstable', key: 'list-name-crosstable', round: true, phase: 1 },
-    { id: 'Scorecards', key: 'list-scorecards', round: false, phase: 2 },
-    { id: 'BoardCards', key: 'list-board-cards', round: true, phase: 2 },
-    { id: 'RatingReport', key: 'list-rating-report', round: false, phase: 2 },
-    { id: 'Prizes', key: 'list-prizes', round: false, phase: 3 },
-    { id: 'TeamRosters', key: 'list-team-roster', round: false, phase: 3 }
+  const ALL_LISTS: ListDef[] = [
+    { id: 'StartingRank', key: 'list-starting-rank', round: false },
+    { id: 'Alphabetical', key: 'list-alphabetical', round: false },
+    { id: 'Pairings', key: 'list-name-pairings', round: true },
+    { id: 'Standings', key: 'list-name-standings', round: true },
+    { id: 'Crosstable', key: 'list-name-crosstable', round: true },
+    { id: 'Scorecards', key: 'list-scorecards', round: false },
+    { id: 'BoardCards', key: 'list-board-cards', round: true },
+    { id: 'RatingReport', key: 'list-rating-report', round: false },
+    { id: 'Prizes', key: 'list-prizes', round: false },
+    { id: 'TeamRosters', key: 'list-team-roster', round: false, team: true },
+    { id: 'TeamPairings', key: 'list-name-team-pairings', round: true, team: true },
+    { id: 'TeamStandings', key: 'list-name-team-standings', round: true, team: true }
   ];
 
-  const FORMATS: { id: ExportFormat; label: string; phase: number | null }[] = [
-    { id: 'html', label: 'HTML', phase: null },
-    { id: 'csv', label: 'CSV', phase: null },
-    { id: 'pdf', label: 'PDF', phase: 1 },
-    { id: 'xlsx', label: 'Excel', phase: 2 }
+  const isTeam = $derived(app.view?.tournament.kind.type.startsWith('Team') ?? false);
+  const LISTS = $derived(ALL_LISTS.filter((l) => !l.team || isTeam));
+
+  const FORMATS: { id: ExportFormat; label: string }[] = [
+    { id: 'html', label: 'HTML' },
+    { id: 'pdf', label: 'PDF' },
+    { id: 'csv', label: 'CSV' },
+    { id: 'xlsx', label: 'Excel' }
   ];
 
   const paired = $derived(app.view?.tournament.rounds.length ?? 0);
@@ -35,15 +39,14 @@
   let lang = $state(i18n.lang);
   let format = $state<ExportFormat>('html');
   let html = $state('');
-  let planned = $state<number | null>(null);
 
-  const def = $derived(LISTS.find((l) => l.id === listId) ?? LISTS[0]);
+  const def = $derived(ALL_LISTS.find((l) => l.id === listId) ?? ALL_LISTS[0]);
 
   // Follow ?list=…&round=… when arriving from a menu or another screen.
   $effect(() => {
     const q = page.url.searchParams;
     const l = q.get('list');
-    if (l && LISTS.some((d) => d.id === l)) listId = l as ListKind['type'];
+    if (l && ALL_LISTS.some((d) => d.id === l)) listId = l as ListKind['type'];
     round = Number(q.get('round')) || Math.max(paired, 1);
   });
 
@@ -57,19 +60,16 @@
     void app.view;
     if (def.round && paired === 0) {
       html = '';
-      planned = null;
       return;
     }
     api
       .listHtml(k, l)
       .then((h) => {
         html = h;
-        planned = null;
       })
       .catch((e) => {
         html = '';
-        if (isCommandError(e) && e.code === 'planned') planned = e.phase;
-        else showError(e);
+        showError(e);
       });
   });
 
@@ -101,7 +101,7 @@
       <button class="primary" onclick={print} disabled={!html}>{t('lists-print')}</button>
       <select bind:value={format} aria-label={t('lists-format')}>
         {#each FORMATS as f}
-          <option value={f.id}>{f.label}{f.phase ? ` (${t('planned-badge', { phase: f.phase })})` : ''}</option>
+          <option value={f.id}>{f.label}</option>
         {/each}
       </select>
       <button onclick={exportList} disabled={!html}>{t('lists-export')}</button>
@@ -113,7 +113,6 @@
       {#each LISTS as l}
         <button class:active={l.id === listId} onclick={() => (listId = l.id)}>
           <span>{t(l.key)}</span>
-          {#if l.phase}<span class="badge planned">P{l.phase}</span>{/if}
         </button>
       {/each}
       {#if def.round}
@@ -124,9 +123,7 @@
       {/if}
     </nav>
     <div class="preview">
-      {#if planned}
-        <PhaseBanner phase={planned} feature={t(def.key)} />
-      {:else if def.round && paired === 0}
+      {#if def.round && paired === 0}
         <p class="muted">{t('lists-no-rounds')}</p>
       {:else}
         <iframe title={t(def.key)} srcdoc={html} sandbox=""></iframe>

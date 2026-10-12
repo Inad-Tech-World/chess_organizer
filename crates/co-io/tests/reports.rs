@@ -1,4 +1,3 @@
-use co_core::Error as CoreError;
 use co_i18n::Translator;
 use co_io::render::{self, Format};
 use co_io::report::{ListKind, build};
@@ -45,16 +44,53 @@ fn rtl_languages_mark_the_document() {
 }
 
 #[test]
-fn planned_lists_report_their_phase() {
+fn crosstable_text() {
     let t = sample();
-    let err = build(
+    let report = build(
         ListKind::Crosstable { round: 3 },
         &t,
         &Translator::new("en"),
     )
-    .unwrap_err();
-    assert!(matches!(
-        err,
-        co_io::Error::Core(CoreError::NotYetImplemented { phase: 1, .. })
-    ));
+    .unwrap();
+    insta::assert_snapshot!(
+        String::from_utf8(render::render(&report, Format::Csv).unwrap()).unwrap()
+    );
+}
+
+#[test]
+fn every_individual_list_builds_and_renders() {
+    let t = sample();
+    let tr = Translator::new("en");
+    for kind in [
+        ListKind::StartingRank,
+        ListKind::Alphabetical,
+        ListKind::Pairings { round: 3 },
+        ListKind::Standings { round: 3 },
+        ListKind::Crosstable { round: 3 },
+        ListKind::Scorecards,
+        ListKind::BoardCards { round: 3 },
+        ListKind::Prizes,
+        ListKind::RatingReport,
+        ListKind::TeamRosters,
+    ] {
+        let report = build(kind, &t, &tr).unwrap_or_else(|e| panic!("{kind:?}: {e}"));
+        for format in [Format::Html, Format::Pdf, Format::Csv, Format::Xlsx] {
+            let bytes = render::render(&report, format)
+                .unwrap_or_else(|e| panic!("{kind:?} {format:?}: {e}"));
+            assert!(!bytes.is_empty());
+        }
+    }
+}
+
+#[test]
+fn unpaired_round_is_an_error() {
+    let t = sample();
+    assert!(
+        build(
+            ListKind::BoardCards { round: 9 },
+            &t,
+            &Translator::new("en")
+        )
+        .is_err()
+    );
 }

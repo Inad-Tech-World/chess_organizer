@@ -1,6 +1,6 @@
 [package]
 name = "co-publish"
-description = "Chess Organiser publishing server for live pairings and standings (Phase 5)"
+description = "Chess Organiser publishing server for live pairings and standings"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -25,3 +25,4 @@ workspace = true
 [dev-dependencies]
 http-body-util = "0.1"
 tower = { version = "0.5", features = ["util"] }
+tempfile.workspace = true

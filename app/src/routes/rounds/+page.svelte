@@ -5,12 +5,12 @@
   import DataGrid from '$lib/components/DataGrid.svelte';
   import type { Column } from '$lib/components/grid';
   import Dialog from '$lib/components/Dialog.svelte';
-  import PhaseBanner from '$lib/components/PhaseBanner.svelte';
+  import TeamRound from '$lib/components/TeamRound.svelte';
   import { deleteLastRound, pairNextRound } from '$lib/commands';
   import { fmtPoints, playerRating } from '$lib/format';
   import { t } from '$lib/i18n/index.svelte';
   import { resultCode, resultForKey } from '$lib/keyboard/results';
-  import { isTeamKind, KINDS, kindId, kindKey } from '$lib/kinds';
+  import { isTeamKind, kindKey } from '$lib/kinds';
   import { app, notify, run, takeAction } from '$lib/stores/app.svelte';
 
   type Row =
@@ -28,7 +28,7 @@
   const round = $derived(tour?.rounds[roundNo - 1]);
   const byId = $derived(new Map((tour?.players ?? []).map((p) => [p.id, p])));
   const before = $derived(roundNo >= 2 ? (app.view?.round_scores[roundNo - 2] ?? {}) : {});
-  const autoPhase = $derived(tour ? (KINDS.find((k) => k.id === kindId(tour.kind))?.phase ?? 1) : 1);
+  const team = $derived(tour ? isTeamKind(tour.kind) : false);
 
   const rows: Row[] = $derived.by(() => {
     if (!round) return [];
@@ -201,11 +201,16 @@
       </div>
     </header>
 
-    {#if isTeamKind(tour.kind)}
-      <PhaseBanner phase={3} feature={t('rounds-team-feature')} />
-    {/if}
-
-    {#if round}
+    {#if round && team}
+      <div class="toolbar">
+        <div class="spacer"></div>
+        <button onclick={() => goto(`/lists?list=TeamPairings&round=${roundNo}`)}>{t('rounds-print')}</button>
+        {#if roundNo === paired}
+          <button class="danger" onclick={deleteLastRound}>{t('rounds-delete')}</button>
+        {/if}
+      </div>
+      <TeamRound {tour} {round} />
+    {:else if round}
       <div class="toolbar">
         <span class="muted">{t('rounds-results-entered', { entered, total: gameCount })}</span>
         <div class="spacer"></div>
@@ -232,12 +237,16 @@
           <h2>{t('rounds-pair-title', { round: nextRound })}</h2>
           <p class="muted">{t('rounds-auto-help', { system: t(kindKey(tour.kind)) })}</p>
         </div>
-        <button class="primary" onclick={pairNextRound} disabled={app.busy || available.length < 2}>
+        <button
+          class="primary"
+          onclick={pairNextRound}
+          disabled={app.busy || (team ? (tour.teams.length < 2) : available.length < 2)}
+        >
           {t('rounds-pair-auto')}
         </button>
-        {#if autoPhase > 1}<span class="badge planned">{t('planned-badge', { phase: autoPhase })}</span>{/if}
       </section>
 
+      {#if !team}
       <section class="manual">
         <div class="card column">
           <h2>{t('rounds-manual')}</h2>
@@ -301,6 +310,7 @@
           {/if}
         </div>
       </section>
+      {/if}
     {:else}
       <p class="muted">{t('rounds-none')}</p>
     {/if}

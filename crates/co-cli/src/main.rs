@@ -72,6 +72,8 @@ struct SystemArg {
     dubov: bool,
     #[arg(long)]
     lim: bool,
+    #[arg(long)]
+    monrad: bool,
 }
 
 impl SystemArg {
@@ -82,6 +84,8 @@ impl SystemArg {
             PairingSystem::Dubov
         } else if self.lim {
             PairingSystem::Lim
+        } else if self.monrad {
+            PairingSystem::Monrad
         } else {
             PairingSystem::Dutch
         }
@@ -95,6 +99,13 @@ enum ListArg {
     Pairings,
     Standings,
     Crosstable,
+    Scorecards,
+    BoardCards,
+    Prizes,
+    RatingReport,
+    TeamRosters,
+    TeamPairings,
+    TeamStandings,
 }
 
 #[derive(Clone, Copy, ValueEnum)]
@@ -178,6 +189,13 @@ fn run(cli: Cli) -> Result<()> {
                 ListArg::Pairings => ListKind::Pairings { round },
                 ListArg::Standings => ListKind::Standings { round },
                 ListArg::Crosstable => ListKind::Crosstable { round },
+                ListArg::Scorecards => ListKind::Scorecards,
+                ListArg::BoardCards => ListKind::BoardCards { round },
+                ListArg::Prizes => ListKind::Prizes,
+                ListArg::RatingReport => ListKind::RatingReport,
+                ListArg::TeamRosters => ListKind::TeamRosters,
+                ListArg::TeamPairings => ListKind::TeamPairings { round },
+                ListArg::TeamStandings => ListKind::TeamStandings { round },
             };
             let format = match format {
                 FormatArg::Html => Format::Html,

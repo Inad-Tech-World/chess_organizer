@@ -1,10 +1,15 @@
-# Signed installers for macOS (universal) and Windows, attached to a draft
-# GitHub release. Disabled until signing is set up (Phase 5): it only runs
-# by hand, and needs these repository secrets:
+# Installers for macOS (universal) and Windows, attached to a draft GitHub
+# release. Runs by hand once the repository variable RELEASES_ENABLED is
+# "true". See docs/releasing.md.
+#
+# Without secrets the installers are unsigned and have no in-app updater.
+# Optional repository secrets:
 #   APPLE_CERTIFICATE, APPLE_CERTIFICATE_PASSWORD, APPLE_SIGNING_IDENTITY,
 #   APPLE_ID, APPLE_PASSWORD, APPLE_TEAM_ID        (macOS signing/notarising)
-#   TAURI_SIGNING_PRIVATE_KEY, TAURI_SIGNING_PRIVATE_KEY_PASSWORD (updater)
-# Windows signing: see docs (SignPath for open-source projects).
+#   TAURI_SIGNING_PRIVATE_KEY, TAURI_SIGNING_PRIVATE_KEY_PASSWORD
+#     (update signing; also set the variable UPDATER_ENABLED to "true" and
+#      put the public key in app/src-tauri/tauri.updater.conf.json)
+# Windows code signing: see docs/releasing.md (SignPath for open source).
 name: Release
 
 on:
@@ -18,9 +23,9 @@ jobs:
       matrix:
         include:
           - os: macos-latest
-            args: --target universal-apple-darwin
+            target: --target universal-apple-darwin
           - os: windows-latest
-            args: ''
+            target: ''
     runs-on: ${{ matrix.os }}
     permissions:
       contents: write
@@ -57,4 +62,7 @@ jobs:
           releaseName: Chess Organiser v__VERSION__
           releaseDraft: true
           prerelease: true
-          args: ${{ matrix.args }}
+          args: >-
+            ${{ matrix.target }}
+            ${{ vars.UPDATER_ENABLED == 'true' && '--features updater --config src-tauri/tauri.updater.conf.json' || '' }}
+          includeUpdaterJson: ${{ vars.UPDATER_ENABLED == 'true' }}

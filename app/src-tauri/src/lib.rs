@@ -18,7 +18,10 @@ pub fn run() {
         .filter(|p| p.extension().is_some_and(|e| e == "cot") && p.is_file())
         .collect();
 
-    let app = tauri::Builder::default()
+    let builder = tauri::Builder::default();
+    #[cfg(feature = "updater")]
+    let builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
+    let app = builder
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_window_state::Builder::default().build())
@@ -43,6 +46,9 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::tournament::defaults,
+            commands::update::update_check,
+            commands::update::update_install,
+            commands::tournament::sample_load,
             commands::tournament::tournament_current,
             commands::tournament::tournament_new,
             commands::tournament::tournament_open,
@@ -71,12 +77,16 @@ pub fn run() {
             commands::player_db::player_db_sources,
             commands::player_db::player_db_import_fide,
             commands::player_db::player_db_import_national,
+            commands::player_db::player_db_preview_national,
+            commands::player_db::player_db_download_fide,
             commands::rounds::round_pair_next,
             commands::rounds::round_pair_manual,
             commands::rounds::round_check,
             commands::rounds::round_delete_last,
             commands::rounds::round_swap_colors,
             commands::rounds::result_set,
+            commands::rounds::team_result_set,
+            commands::rounds::lineup_set,
             commands::lists::list_html,
             commands::lists::list_print,
             commands::lists::list_export,
@@ -85,10 +95,11 @@ pub fn run() {
             commands::teams_prizes::team_remove,
             commands::teams_prizes::prize_category_save,
             commands::teams_prizes::prize_category_remove,
-            commands::planned::team_standings,
-            commands::planned::rating_report,
-            commands::planned::norm_check,
-            commands::planned::publish_upload,
+            commands::reports::team_standings,
+            commands::reports::prize_winners,
+            commands::reports::rating_report,
+            commands::reports::norm_check,
+            commands::reports::publish_upload,
         ])
         .build(tauri::generate_context!())
         .expect("error while building Chess Organiser");

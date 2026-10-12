@@ -30,3 +30,10 @@ tauri = { version = "2", features = [] }
 tauri-plugin-dialog = "2"
 tauri-plugin-opener = "2"
 tauri-plugin-window-state = "2"
+reqwest = { version = "0.13", default-features = false, features = ["native-tls", "system-proxy"] }
+tauri-plugin-updater = { version = "2", optional = true }
+
+[features]
+# In-app updates from GitHub Releases. Release builds enable it together with
+# tauri.updater.conf.json, which carries the update-signing public key.
+updater = ["dep:tauri-plugin-updater"]

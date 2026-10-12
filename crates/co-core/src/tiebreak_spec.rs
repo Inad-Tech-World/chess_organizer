@@ -50,10 +50,17 @@ pub enum TiebreakKind {
     /// Secondary team score (game points when ranking by match points, or
     /// vice versa). Not a C.07 code; written to TRF as `OTHER_SEC`.
     SecondaryScore,
+    // Added in the March 2026 edition of C.07.
+    /// Standard points: rounds won against the scheduled opponent, half for equal (7.7).
+    StandardPoints,
+    /// Pairing number, lower first (7.8).
+    PairingNumber,
+    /// Rating, higher first (10.6).
+    Rating,
 }
 
 impl TiebreakKind {
-    pub const ALL: [TiebreakKind; 32] = [
+    pub const ALL: [TiebreakKind; 35] = [
         Self::DirectEncounter,
         Self::GamesWithBlack,
         Self::WinsWithBlack,
@@ -86,6 +93,9 @@ impl TiebreakKind {
         Self::EdeBottomBoard,
         Self::StrengthCompensatedScore,
         Self::SecondaryScore,
+        Self::StandardPoints,
+        Self::PairingNumber,
+        Self::Rating,
     ];
 
     /// Acronym used in C.07, on printed lists and in TRF 202/212.
@@ -123,6 +133,9 @@ impl TiebreakKind {
             Self::EdeBottomBoard => "EDEB",
             Self::StrengthCompensatedScore => "SSSC",
             Self::SecondaryScore => "OTHER_SEC",
+            Self::StandardPoints => "STD",
+            Self::PairingNumber => "TPN",
+            Self::Rating => "RTNG",
         }
     }
 
@@ -133,11 +146,41 @@ impl TiebreakKind {
     }
 
     pub fn for_individuals(self) -> bool {
-        (self as u8) <= (Self::Koya as u8)
+        !matches!(
+            self,
+            Self::BoardCount
+                | Self::TopBoardResult
+                | Self::BottomBoardElimination
+                | Self::MatchPointsVsGamePoints
+                | Self::TeamSbMatchMatch
+                | Self::TeamSbMatchGame
+                | Self::TeamSbGameMatch
+                | Self::TeamSbGameGame
+                | Self::ExtendedDirectEncounter
+                | Self::EdeBoardCountTopBoard
+                | Self::EdeBoardCountBottomBoard
+                | Self::EdeTopBoard
+                | Self::EdeBottomBoard
+                | Self::StrengthCompensatedScore
+                | Self::SecondaryScore
+        )
     }
 
     pub fn for_teams(self) -> bool {
-        (self as u8) >= (Self::Wins as u8)
+        !matches!(
+            self,
+            Self::DirectEncounter
+                | Self::GamesWithBlack
+                | Self::WinsWithBlack
+                | Self::RoundsElectedToPlay
+                | Self::SonnebornBerger
+                | Self::AverageRatingOfOpponents
+                | Self::TournamentPerformanceRating
+                | Self::PerfectTournamentPerformance
+                | Self::AveragePerformanceRatingOfOpponents
+                | Self::AveragePerfectPerformanceOfOpponents
+                | Self::Rating
+        )
     }
 
     /// Phase in which the calculation is scheduled to land.

@@ -105,14 +105,85 @@ mod tests {
     use super::*;
 
     #[test]
-    fn falls_back_to_english_then_id() {
+    fn translates_and_falls_back_to_the_id() {
         let t = Translator::new("fr");
-        assert_eq!(t.t("col-name"), "Name");
+        assert_eq!(t.t("col-name"), "Nom");
         assert_eq!(t.t("no-such-message"), "no-such-message");
         assert_eq!(
             t.t_args("list-pairings", &[("round", 3.into())]),
-            "Pairings – round 3"
+            "Appariements – ronde 3"
         );
+        assert_eq!(Translator::new("de").t("col-name"), "Name");
+    }
+
+    /// Message ids and the variables each message uses, from FTL source.
+    fn catalogue(
+        src: &str,
+    ) -> std::collections::BTreeMap<String, std::collections::BTreeSet<String>> {
+        let mut out = std::collections::BTreeMap::new();
+        let mut current: Option<String> = None;
+        for line in src.lines() {
+            if let Some((id, _)) = line.split_once(" = ").filter(|(id, _)| {
+                !id.is_empty()
+                    && id
+                        .chars()
+                        .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+            }) {
+                current = Some(id.to_string());
+                out.insert(id.to_string(), Default::default());
+            }
+            if let Some(id) = &current {
+                let vars: &mut std::collections::BTreeSet<String> =
+                    out.get_mut(id).expect("inserted");
+                let mut rest = line;
+                while let Some(i) = rest.find("{ $") {
+                    let after = &rest[i + 3..];
+                    let end = after
+                        .find(|c: char| !(c.is_ascii_alphanumeric() || c == '_'))
+                        .unwrap_or(after.len());
+                    vars.insert(after[..end].to_string());
+                    rest = &after[end..];
+                }
+            }
+        }
+        out
+    }
+
+    #[test]
+    fn every_language_matches_english() {
+        macro_rules! app {
+            ($l:literal) => {
+                include_str!(concat!("../../../locales/", $l, "/app.ftl"))
+            };
+        }
+        let english = [catalogue(ftl!("en")), catalogue(app!("en"))];
+        let others = [
+            ("fr", ftl!("fr"), app!("fr")),
+            ("ar", ftl!("ar"), app!("ar")),
+            ("sw", ftl!("sw"), app!("sw")),
+            ("pt", ftl!("pt"), app!("pt")),
+            ("es", ftl!("es"), app!("es")),
+        ];
+        for (lang, lists, app) in others {
+            for (file, (en, src)) in ["lists.ftl", "app.ftl"]
+                .iter()
+                .zip(english.iter().zip([lists, app]))
+            {
+                let theirs = catalogue(src);
+                let missing: Vec<_> = en.keys().filter(|k| !theirs.contains_key(*k)).collect();
+                let extra: Vec<_> = theirs.keys().filter(|k| !en.contains_key(*k)).collect();
+                assert!(
+                    missing.is_empty() && extra.is_empty(),
+                    "{lang}/{file}: missing {missing:?}, extra {extra:?}"
+                );
+                for (k, vars) in en {
+                    assert_eq!(&theirs[k], vars, "{lang}/{file}: variables of {k}");
+                }
+                // Every message must parse.
+                FluentResource::try_new(src.to_owned())
+                    .unwrap_or_else(|(_, e)| panic!("{lang}/{file}: {e:?}"));
+            }
+        }
     }
 
     #[test]

@@ -4,25 +4,35 @@
 import { invoke } from '@tauri-apps/api/core';
 import type {
   ByeKind,
+  ColumnMapping,
   ExportFormat,
   GameResult,
   ImportResult,
   ListKind,
+  ListPreview,
   ManualOutcome,
+  NormReport,
   Player,
   PlayerId,
   PlayerRecord,
   PrizeCategory,
+  PrizeWinner,
+  RatingChangeRow,
   Settings,
   Source,
   Team,
+  TeamStandings,
   TournamentInfo,
   TournamentKind,
   TournamentView
 } from './types';
 
 export const api = {
+  updateCheck: () =>
+    invoke<{ enabled: boolean; current: string; available: string | null; notes: string | null }>('update_check'),
+  updateInstall: () => invoke<void>('update_install'),
   defaults: () => invoke<{ info: TournamentInfo; settings: Settings }>('defaults'),
+  sampleLoad: () => invoke<TournamentView>('sample_load'),
   current: () => invoke<TournamentView | null>('tournament_current'),
   newTournament: (args: {
     path: string;
@@ -34,7 +44,8 @@ export const api = {
   openWindow: (path: string | null) => invoke<void>('open_window', { path }),
   importTrf: (trfPath: string, cot: string) =>
     invoke<ImportResult>('tournament_import_trf', { trfPath, cot }),
-  importOther: (path: string) => invoke<void>('tournament_import_swiss_manager', { path }),
+  importOther: (path: string, cot: string) =>
+    invoke<ImportResult>('tournament_import_swiss_manager', { path, cot }),
   close: () => invoke<void>('tournament_close'),
   saveAs: (path: string) => invoke<void>('tournament_save_as', { path }),
   exportTrf: (path: string) => invoke<void>('tournament_export_trf', { path }),
@@ -62,7 +73,11 @@ export const api = {
     invoke<PlayerRecord[]>('player_db_search', { query, limit }),
   playerDbSources: () => invoke<Source[]>('player_db_sources'),
   playerDbImportFide: (path: string) => invoke<number>('player_db_import_fide', { path }),
-  playerDbImportNational: (path: string) => invoke<number>('player_db_import_national', { path }),
+  playerDbDownloadFide: () => invoke<number>('player_db_download_fide'),
+  playerDbPreviewNational: (path: string) =>
+    invoke<ListPreview>('player_db_preview_national', { path }),
+  playerDbImportNational: (path: string, mapping: ColumnMapping, name: string) =>
+    invoke<number>('player_db_import_national', { path, mapping, name }),
 
   pairNext: () => invoke<TournamentView>('round_pair_next'),
   pairManual: (games: [PlayerId, PlayerId][], pab: PlayerId | null, force: boolean) =>
@@ -73,6 +88,10 @@ export const api = {
     invoke<TournamentView>('round_swap_colors', { round, board }),
   setResult: (round: number, board: number, result: GameResult | null) =>
     invoke<TournamentView>('result_set', { round, board, result }),
+  setTeamResult: (round: number, matchNumber: number, board: number, result: GameResult | null) =>
+    invoke<TournamentView>('team_result_set', { round, matchNumber, board, result }),
+  setLineup: (round: number, matchNumber: number, team: number, lineup: PlayerId[]) =>
+    invoke<TournamentView>('lineup_set', { round, matchNumber, team, lineup }),
 
   listHtml: (kind: ListKind, lang: string) => invoke<string>('list_html', { kind, lang }),
   listPrint: (kind: ListKind, lang: string) => invoke<void>('list_print', { kind, lang }),
@@ -87,9 +106,10 @@ export const api = {
   removePrizeCategory: (category: number) =>
     invoke<TournamentView>('prize_category_remove', { category }),
 
-  teamStandings: () => invoke<void>('team_standings'),
-  ratingReport: () => invoke<[number, number][]>('rating_report'),
-  normCheck: (player: PlayerId) => invoke<unknown[]>('norm_check', { player }),
+  teamStandings: () => invoke<TeamStandings>('team_standings'),
+  prizeWinners: () => invoke<PrizeWinner[]>('prize_winners'),
+  ratingReport: () => invoke<RatingChangeRow[]>('rating_report'),
+  normCheck: (player: PlayerId) => invoke<NormReport[]>('norm_check', { player }),
   publishUpload: (server: string, token: string) =>
-    invoke<void>('publish_upload', { server, token })
+    invoke<string>('publish_upload', { server, token })
 };

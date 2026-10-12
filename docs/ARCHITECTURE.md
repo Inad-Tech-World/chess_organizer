@@ -16,7 +16,7 @@
 │ co-store    .cot file (SQLite event log) · player database (FTS5)             │
 │ co-i18n     Fluent loader shared with the UI                                  │
 └───────────────────────────────────────────────────────────────────────────────┘
-  co-cli (`co`)      co-publish (axum, Phase 5)      xtask oracle (bbpPairings)
+  co-cli (`co`)      co-publish (axum)      xtask oracle (bbpPairings)
 ```
 
 Dependency direction: `co-core` ← `co-pairing`, `co-tiebreak`, `co-rating` ←

@@ -162,3 +162,112 @@ fn pending_results_and_blank_blocks() {
     // Player 3's line ends before round 1: not paired at all.
     assert_eq!(r1.entry_for(PlayerId(3)), None);
 }
+
+#[test]
+fn team_events_round_trip_through_trf() {
+    use co_core::*;
+    let mut settings = Settings {
+        rounds: 3,
+        ..Settings::default()
+    };
+    settings.team.boards = 2;
+    let mut t = Tournament::create(&Event::TournamentCreated {
+        id: Uuid::nil(),
+        info: TournamentInfo {
+            name: "Team test".into(),
+            ..TournamentInfo::default()
+        },
+        settings,
+        kind: TournamentKind::TeamSwiss {
+            system: SwissSystem::Dutch,
+        },
+    })
+    .unwrap();
+    for i in 1..=6 {
+        let mut p = Player::new(PlayerId(i), format!("P{i}"));
+        p.ratings.fide_standard = Some(2300 - i as u16 * 10);
+        t.apply(&Event::PlayerAdded { player: p }).unwrap();
+    }
+    for (k, name) in ["Lions", "Eagles", "Cranes"].iter().enumerate() {
+        let base = k as u32 * 2;
+        t.apply(&Event::TeamAdded {
+            team: Team {
+                id: TeamId(k as u32 + 1),
+                name: (*name).into(),
+                short_name: None,
+                federation: None,
+                members: vec![PlayerId(base + 1), PlayerId(base + 2)],
+                captain: None,
+            },
+        })
+        .unwrap();
+    }
+    let mut m = TeamMatch {
+        number: 1,
+        home: TeamId(1),
+        away: Some(TeamId(2)),
+        home_lineup: vec![PlayerId(1), PlayerId(2)],
+        away_lineup: vec![PlayerId(3), PlayerId(4)],
+        games: vec![],
+    };
+    m.rebuild_games();
+    let bye = TeamMatch {
+        number: 2,
+        home: TeamId(3),
+        away: None,
+        home_lineup: vec![],
+        away_lineup: vec![],
+        games: vec![],
+    };
+    t.apply(&Event::RoundPaired {
+        round: 1,
+        pairings: vec![],
+        matches: vec![m, bye],
+        method: PairingMethod::Manual,
+    })
+    .unwrap();
+    t.apply(&Event::TeamGameResultEntered {
+        round: 1,
+        match_number: 1,
+        board: 1,
+        result: Some(GameResult::WHITE_WINS),
+    })
+    .unwrap();
+    t.apply(&Event::TeamGameResultEntered {
+        round: 1,
+        match_number: 1,
+        board: 2,
+        result: Some(GameResult::DRAW),
+    })
+    .unwrap();
+
+    let text = write(&t);
+    assert!(
+        text.lines().any(|l| l.starts_with("310 001 Lions")),
+        "{text}"
+    );
+    let back = read(&text).unwrap().tournament;
+    assert_eq!(back.teams.len(), 3);
+    assert_eq!(back.teams[0].members, [PlayerId(1), PlayerId(2)]);
+    let r = &back.rounds[0];
+    assert!(r.pairings.is_empty(), "{:?}", r.pairings);
+    assert_eq!(r.matches.len(), 2);
+    let m = &r.matches[0];
+    assert_eq!((m.home, m.away), (TeamId(1), Some(TeamId(2))));
+    assert_eq!(m.home_lineup, [PlayerId(1), PlayerId(2)]);
+    assert_eq!(m.games.len(), 2);
+    assert_eq!(
+        r.matches[1],
+        TeamMatch {
+            number: 2,
+            home: TeamId(3),
+            away: None,
+            home_lineup: vec![],
+            away_lineup: vec![],
+            games: vec![]
+        }
+    );
+    let s = co_tiebreak::team_standings(&back, 1).unwrap();
+    let first = &s.rows[0];
+    assert_eq!(first.match_points, back.settings.team.match_win);
+}

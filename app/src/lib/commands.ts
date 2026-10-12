@@ -3,7 +3,8 @@
 import { goto } from '$app/navigation';
 import { ask } from '@tauri-apps/plugin-dialog';
 import { api } from '$lib/api';
-import { ANY, COT, pickOpen, pickSave, suggestName, TRF } from '$lib/files';
+import { COT, EXPORTED, pickOpen, pickSave, suggestName, TRF } from '$lib/files';
+import type { ImportResult } from '$lib/api/types';
 import { t } from '$lib/i18n/index.svelte';
 import { app, notify, run } from '$lib/stores/app.svelte';
 
@@ -18,22 +19,40 @@ export async function openTournament(path?: string | null) {
   if (await run(() => api.open(path))) goto('/players');
 }
 
+/** Loads a fresh copy of the sample tournament (and sample player list). */
+export async function loadSample() {
+  if (app.view && !(await ask(t('sample-replace-confirm'), { kind: 'info' }))) return;
+  if (await run(() => api.sampleLoad())) goto('/rounds');
+}
+
 export async function openInNewWindow() {
   const path = await pickOpen(COT);
   if (path) await run(() => api.openWindow(path));
 }
 
 export async function importTrf() {
-  const trf = await pickOpen(TRF);
-  if (!trf) return;
-  const base = trf.replace(/\.[^./\\]+$/, '');
-  const cot = await pickSave(COT, `${base}.cot`);
-  if (!cot) return;
+  return importFile(TRF, (src, cot) => api.importTrf(src, cot));
+}
+
+/** Files exported by other pairing programs: TRF or a CSV/TXT player list. */
+export async function importOther() {
+  return importFile(EXPORTED, (src, cot) => api.importOther(src, cot));
+}
+
+async function importFile(
+  filters: typeof TRF,
+  call: (src: string, cot: string) => Promise<ImportResult>
+) {
   if (app.view) {
     notify({ kind: 'info', message: t('import-new-window-hint') });
     return;
   }
-  const result = await run(() => api.importTrf(trf, cot));
+  const src = await pickOpen(filters);
+  if (!src) return;
+  const base = src.replace(/\.[^./\\]+$/, '');
+  const cot = await pickSave(COT, `${base}.cot`);
+  if (!cot) return;
+  const result = await run(() => call(src, cot));
   if (result) {
     app.view = result.view;
     if (result.warnings.length) {
@@ -41,11 +60,6 @@ export async function importTrf() {
     }
     goto('/players');
   }
-}
-
-export async function importOther() {
-  const path = await pickOpen(ANY);
-  if (path) await run(() => api.importOther(path));
 }
 
 export async function exportTrf() {
@@ -125,7 +139,7 @@ const LIST_ITEMS: Record<string, string> = {
 
 /** Handles a menu item id sent by the native menu bar. */
 export async function handleMenu(id: string) {
-  const needsTournament = !['file.new', 'file.open', 'file.open-window', 'file.import-trf',
+  const needsTournament = !['file.new', 'file.open', 'file.open-window', 'file.sample', 'file.import-trf',
     'file.import-other', 'app.settings', 'nav.player-db', 'help.keyboard'].includes(id);
   if (needsTournament && !requireTournament()) return;
 
@@ -139,6 +153,8 @@ export async function handleMenu(id: string) {
       return openTournament();
     case 'file.open-window':
       return openInNewWindow();
+    case 'file.sample':
+      return loadSample();
     case 'file.import-trf':
       return importTrf();
     case 'file.import-other':

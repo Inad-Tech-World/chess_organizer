@@ -59,6 +59,28 @@ export interface PlayerRecord {
   club: string | null;
 }
 
+export interface ColumnMapping {
+  nationalId: number | null;
+  name: number | null;
+  surname: number | null;
+  firstName: number | null;
+  rating: number | null;
+  fideId: number | null;
+  federation: number | null;
+  sex: number | null;
+  birthYear: number | null;
+  club: number | null;
+  title: number | null;
+  hasHeader: boolean;
+}
+
+export interface ListPreview {
+  delimiter: string;
+  headers: string[];
+  rows: string[][];
+  mapping: ColumnMapping;
+}
+
 export interface Source {
   id: number;
   name: string;
@@ -77,7 +99,9 @@ export type ListKind =
   | { type: 'BoardCards'; round: number }
   | { type: 'Prizes' }
   | { type: 'TeamRosters' }
-  | { type: 'RatingReport' };
+  | { type: 'RatingReport' }
+  | { type: 'TeamPairings'; round: number }
+  | { type: 'TeamStandings'; round: number };
 
 export type ExportFormat = 'html' | 'pdf' | 'csv' | 'xlsx';
 
@@ -90,4 +114,61 @@ export interface ManualOutcome {
 export interface ImportResult {
   view: TournamentView;
   warnings: string[];
+}
+
+/** A tie-break value in hundredths, or not computable. */
+export type TbValue = { Value: number } | 'Unavailable';
+
+export function tbDisplay(v: TbValue): string {
+  if (v === 'Unavailable') return '–';
+  const n = v.Value;
+  if (n % 100 === 0) return String(n / 100);
+  if (n % 10 === 0) return (n / 100).toFixed(1);
+  return (n / 100).toFixed(2);
+}
+
+export interface TeamStandingRow {
+  rank: number;
+  tied_with_previous: boolean;
+  team: number;
+  match_points: number;
+  game_points: number;
+  tiebreaks: TbValue[];
+}
+
+export interface TeamStandings {
+  after_round: number;
+  primary: 'MatchPoints' | 'GamePoints';
+  tiebreak_labels: string[];
+  rows: TeamStandingRow[];
+}
+
+export interface PrizeWinner {
+  category: string;
+  place: number;
+  prize: string;
+  player: number;
+}
+
+export interface RatingChangeRow {
+  player: number;
+  rating: number | null;
+  k: number | null;
+  games: number;
+  score: number;
+  expected: number;
+  change: number;
+  average_opponent_rating: number | null;
+  performance: number | null;
+  initial_rating_estimate: number | null;
+}
+
+export interface NormReport {
+  player: number;
+  title: 'GM' | 'IM' | 'WGM' | 'WIM';
+  achieved: boolean;
+  games: number;
+  performance: number;
+  average_opponent_rating: number;
+  shortfalls: string[];
 }

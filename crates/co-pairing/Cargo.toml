@@ -10,6 +10,7 @@ authors.workspace = true
 
 [dependencies]
 co-core.workspace = true
+smallvec.workspace = true
 thiserror.workspace = true
 
 [lints]
@@ -17,3 +18,4 @@ workspace = true
 
 [dev-dependencies]
 uuid.workspace = true
+co-tiebreak = { path = "../co-tiebreak" }

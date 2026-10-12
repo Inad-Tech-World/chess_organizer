@@ -1,6 +1,7 @@
 // Browser preview: lets `pnpm dev` run in an ordinary browser, without the
 // Tauri shell, against a read-mostly fake backend built from
-// testdata/trf/sample.trf (regenerate with `cargo xtask fixture`).
+// the sample tournament in crates/co-io/src/sample.rs (regenerate with
+// `cargo xtask fixture`).
 // Only loaded in development builds; see +layout.svelte.
 
 import { mockIPC, mockWindows } from '@tauri-apps/api/mocks';
@@ -13,9 +14,6 @@ const desktopOnly = (cmd: string) =>
     message: `Browser preview: "${cmd}" needs the desktop app (cargo tauri dev).`,
     phase: null
   });
-
-const planned = (feature: string, phase: number) =>
-  Promise.reject({ code: 'planned', message: `${feature} is planned for Phase ${phase}`, phase });
 
 export function installPreviewBackend() {
   mockWindows('main');
@@ -42,13 +40,19 @@ export function installPreviewBackend() {
           return [];
         case 'defaults':
           return fixture.defaults;
-        case 'player_db_search':
+        case 'player_db_search': {
+          const q = String(a.query ?? '').toLowerCase();
+          return (fixture.people as { name: string; fide_id: number | null }[])
+            .filter((p) => p.name.toLowerCase().includes(q) || String(p.fide_id ?? '') === q)
+            .slice(0, Number(a.limit ?? 50));
+        }
         case 'player_db_sources':
-          return [];
+          return [{ id: 1, name: 'Sample list (fictional players)', period: 'demo', imported_at: '', players: fixture.people.length }];
+        case 'sample_load':
+          open = true;
+          return view;
         case 'list_html':
-          return lists[JSON.stringify(a.kind)] ?? planned('This list', 1);
-        case 'round_pair_next':
-          return planned('FIDE Dutch pairing', 1);
+          return lists[JSON.stringify(a.kind)] ?? desktopOnly(`list ${JSON.stringify(a.kind)}`);
         case 'result_set': {
           const round = view.tournament.rounds[(a.round as number) - 1];
           const game = round?.pairings.find((p) => p.type === 'Game' && p.board === a.board);

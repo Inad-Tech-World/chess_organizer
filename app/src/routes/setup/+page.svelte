@@ -1,7 +1,6 @@
 <script lang="ts">
   import { api } from '$lib/api';
   import type { Settings, TiebreakKind, TournamentInfo } from '$lib/api/types';
-  import PhaseBanner from '$lib/components/PhaseBanner.svelte';
   import { t } from '$lib/i18n/index.svelte';
   import { isTeamKind, KINDS, kindId } from '$lib/kinds';
   import { clone } from '$lib/players';
@@ -197,11 +196,8 @@
         </label>
       </div>
       {#if locked}<p class="muted">{t('setup-kind-locked')}</p>{/if}
-      {#if kindDef.phase > 1}
-        <PhaseBanner phase={kindDef.phase} feature={t('setup-auto-pairing', { system: t(`kind-${kind}`) })} />
-      {/if}
-      {#if settings.acceleration === 'Baku'}
-        <PhaseBanner phase={2} feature={t('setup-acceleration-baku')} />
+      {#if kindDef.note}
+        <p class="muted note">{t(kindDef.note)}</p>
       {/if}
     </section>
 
@@ -237,7 +233,6 @@
               <td>
                 <strong class="mono">{tiebreakLabel(tb)}</strong>
                 <span class="muted">{t(`tb-${meta.acronym}`)}</span>
-                <span class="badge planned">{t('planned-badge', { phase: meta.phase })}</span>
               </td>
               <td>
                 <select value={cutValue(i)} onchange={(e) => setCut(i, e.currentTarget.value)}>
@@ -345,8 +340,7 @@
   section p {
     margin: 8px 0 0;
   }
-  td .muted,
-  td .badge {
+  td .muted {
     margin-inline-start: 6px;
   }
   ul {

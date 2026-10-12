@@ -1,14 +1,27 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { api } from '$lib/api';
-  import type { PrizeCategory } from '$lib/api/types';
+  import type { PrizeCategory, PrizeWinner } from '$lib/api/types';
   import Dialog from '$lib/components/Dialog.svelte';
-  import PhaseBanner from '$lib/components/PhaseBanner.svelte';
   import { t } from '$lib/i18n/index.svelte';
   import { clone } from '$lib/players';
-  import { app, run } from '$lib/stores/app.svelte';
+  import { app, run, showError } from '$lib/stores/app.svelte';
 
   const tour = $derived(app.view?.tournament);
+  let winners = $state<PrizeWinner[]>([]);
+
+  $effect(() => {
+    const t = app.view?.tournament;
+    if (!t || t.rounds.length === 0 || t.prize_categories.length === 0) {
+      winners = [];
+      return;
+    }
+    api.prizeWinners().then((w) => (winners = w)).catch(showError);
+  });
+
+  function playerName(id: number) {
+    return tour?.players.find((p) => p.id === id)?.name ?? `#${id}`;
+  }
   let editing = $state<PrizeCategory | null>(null);
   let prizesText = $state('');
   let open = $state(false);
@@ -71,7 +84,6 @@
       <button onclick={() => goto('/lists?list=Prizes')}>{t('list-prizes')}</button>
       <button class="primary" onclick={() => edit(null)}>{t('prizes-add')}</button>
     </header>
-    <PhaseBanner phase={3} feature={t('prizes-feature')} />
     <section class="card">
       <table class="simple">
         <thead><tr><th>{t('prizes-category')}</th><th>{t('prizes-filter')}</th><th>{t('prizes-prizes')}</th><th></th></tr></thead>
@@ -92,6 +104,20 @@
         </tbody>
       </table>
     </section>
+    {#if winners.length}
+      <section class="card">
+        <h2>{t('prizes-winners', { round: tour.rounds.length })}</h2>
+        <table class="simple">
+          <thead><tr><th>{t('prizes-category')}</th><th>{t('col-place')}</th><th>{t('col-prize')}</th><th>{t('col-name')}</th></tr></thead>
+          <tbody>
+            {#each winners as w}
+              <tr><td>{w.category}</td><td>{w.place}</td><td>{w.prize}</td><td>{playerName(w.player)}</td></tr>
+            {/each}
+          </tbody>
+        </table>
+        <p class="muted">{t('prizes-one-each')}</p>
+      </section>
+    {/if}
   </div>
 
   <Dialog bind:open title={t('prizes-category')} width="560px">

@@ -129,6 +129,10 @@ impl TournamentKind {
         matches!(self, Self::TeamSwiss { .. } | Self::TeamRoundRobin { .. })
     }
 
+    pub fn is_round_robin(self) -> bool {
+        matches!(self, Self::RoundRobin { .. } | Self::TeamRoundRobin { .. })
+    }
+
     pub fn pairing_system(self) -> PairingSystem {
         match self {
             Self::Swiss { system } => system.into(),

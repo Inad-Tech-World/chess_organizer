@@ -9,13 +9,14 @@ managers: create tournament, register players, pair, enter results, print
 lists, publish, send the rating report. It has no player, round or team
 limits and costs nothing.
 
-> **Status: skeleton (all six phases scaffolded).** Every screen, menu, crate
-> and API for Phases 0–5 exists and is wired end to end. The foundations
-> work today: tournament files with unlimited undo, players, manual pairing,
-> keyboard result entry, standings by points, printable lists, TRF-2026
-> import/export, the player database and the CLI. Each phase's logic is
-> filled in phase by phase. Planned features answer with "Planned for Phase N"
-> instead of failing silently. See [docs/roadmap.md](docs/roadmap.md).
+> **Status: feature-complete, pre-1.0.** All six phases of the workplan are
+> implemented: FIDE Dutch and Burstein pairings that reproduce the endorsed
+> engine exactly (5,009 of 5,009 random tournaments), Baku acceleration,
+> Dubov, Lim, Monrad, round robins, team events with line-ups, every C.07
+> tie-break, rating changes, norm checks, prize lists, FIDE list import,
+> PDF/Excel/CSV/HTML lists in six languages and a live results server.
+> Installers are not yet signed. See [docs/roadmap.md](docs/roadmap.md) and the
+> [arbiter's manual](docs/arbiter-manual.md).
 
 ## Layout
 
@@ -29,10 +30,10 @@ limits and costs nothing.
 | `crates/co-store` | `.cot` tournament files (SQLite event log) and the player database |
 | `crates/co-i18n` | Fluent translations shared by printed lists and the UI |
 | `crates/co-cli` | `co` command line, bbpPairings-compatible |
-| `crates/co-publish` | Live results web server (Phase 5) |
+| `crates/co-publish` | Live results web server |
 | `app/` | Desktop app: Tauri 2 (`src-tauri/`) + SvelteKit (`src/`) |
 | `xtask/` | `cargo xtask oracle` conformance harness, `cargo xtask fixture` |
-| `locales/` | `.ftl` message files (en complete; fr, ar, sw, pt, es in Phase 5) |
+| `locales/` | `.ftl` message files: en, fr, ar, sw, pt, es |
 | `docs/` | Architecture, data model, FIDE rules map, roadmap, ADRs |
 
 ## Building
@@ -57,7 +58,7 @@ Command line:
 ```bash
 cargo run -p co-cli -- convert testdata/trf/sample.trf /tmp/sample.cot
 cargo run -p co-cli -- report standings /tmp/sample.cot --format html -o standings.html
-cargo run -p co-cli -- pair --dutch tournament.trf -p   # Phase 1
+cargo run -p co-cli -- pair --dutch tournament.trf -p   # also --burstein, --dubov, --lim, --monrad
 ```
 
 ## Pairing conformance

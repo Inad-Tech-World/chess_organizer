@@ -1,6 +1,7 @@
 <script lang="ts">
   import '../app.css';
   import { onMount, type Snippet } from 'svelte';
+  import { goto } from '$app/navigation';
   import { page } from '$app/state';
   import { listen } from '@tauri-apps/api/event';
   import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
@@ -45,6 +46,8 @@
     const unlisten: Promise<() => void>[] = [];
     (async () => {
       try {
+        // Tauri loads /index.html; the app's home route is /.
+        if (location.pathname.endsWith('/index.html')) await goto('/', { replaceState: true });
         if (import.meta.env.DEV && !('__TAURI_INTERNALS__' in window)) {
           (await import('$lib/dev/preview')).installPreviewBackend();
         }
@@ -72,7 +75,8 @@
   }
 
   function isActive(href: string) {
-    return href === '/' ? page.url.pathname === '/' : page.url.pathname.startsWith(href);
+    const path = page.url.pathname.replace(/\/index\.html$/, '/');
+    return href === '/' ? path === '/' : path.startsWith(href);
   }
 </script>
 
@@ -118,7 +122,7 @@
     {/if}
     <NoticeBar />
     <div class="content">
-      {#if app.view || ['/', '/settings', '/player-db'].includes(page.url.pathname)}
+      {#if app.view || ['/', '/index.html', '/settings', '/player-db'].includes(page.url.pathname)}
         {@render children()}
       {:else}
         <div class="page">

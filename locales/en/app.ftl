@@ -22,7 +22,6 @@ action-move-up = Move up
 action-move-down = Move down
 undo-what = Undo { $what }
 planned-badge = Phase { $phase }
-planned-body = planned for Phase { $phase } of the roadmap. The screen is ready; the calculation arrives with that phase.
 no-tournament-hint = Open or create a tournament first.
 export-done = Saved { $path }
 import-warnings = Imported with notes:
@@ -95,7 +94,6 @@ setup-acceleration-baku = Baku acceleration
 setup-acceleration-manual = Manual (from TRF)
 setup-fide-rated = FIDE-rated event
 setup-kind-locked = The tournament type cannot change after round 1 has been paired.
-setup-auto-pairing = Automatic pairing ({ $system })
 setup-points = Points
 points-win = Win
 points-draw = Draw
@@ -111,7 +109,7 @@ setup-tiebreak = Tie-break
 setup-tb-cut = Cut / median
 setup-tb-forfeits = Forfeits as played (/P)
 setup-tb-add = Add tie-break
-setup-tb-help = Codes follow the TRF-2026 rank order descriptors (e.g. BH/C1 = Buchholz cut 1). Each tie-break shows the phase in which its calculation lands; until then the column shows “–”.
+setup-tb-help = Codes follow the TRF-2026 rank order descriptors (e.g. BH/C1 = Buchholz cut 1). A “–” means the value cannot be calculated for that player, e.g. a rating tie-break without rated opponents.
 setup-forbidden = Forbidden pairings
 setup-forbidden-help = Players in the same group are never paired against each other: club-mates in early rounds, family members, or any pair the regulations forbid.
 setup-group-name = Group name
@@ -209,7 +207,22 @@ bye-full-points = Full-point bye
 
 ## Player database
 
-player-db-help = Download the monthly FIDE rating list from ratings.fide.com (XML or TXT) and import it here. Searches then fill in names, titles, ratings and FIDE IDs.
+player-db-help = Download the monthly FIDE rating list (or import one you saved, as zip, XML or TXT) and add national lists from CSV. Searches then fill in names, titles, ratings and IDs.
+player-db-download-fide = Download FIDE list
+player-db-connecting = Connecting to ratings.fide.com…
+player-db-downloading = Downloading the FIDE list… { $mb } MB
+player-db-importing = Importing… { $count } players
+player-db-imported = { $count } players imported.
+player-db-mapping-title = Import national list
+player-db-mapping-help = Choose which column holds each field. Either a full-name column or a surname column is required.
+player-db-source-name = List name
+player-db-has-header = First row holds column names
+player-db-field-name = Full name
+player-db-field-surname = Surname
+player-db-field-first-name = First name
+player-db-field-national-id = National ID
+player-db-field-rating = National rating
+player-db-import = Import
 player-db-import-fide = Import FIDE rating list…
 player-db-import-national = Import national list (CSV)…
 player-db-search-placeholder = Search by name or FIDE ID
@@ -244,7 +257,11 @@ rounds-boards = { $count ->
 rounds-commit = Pair round { $round }
 rounds-unpaired-left = { $count } player(s) still unpaired.
 rounds-none = No round to show.
-rounds-team-feature = Team pairings and line-ups
+rounds-matches = { $count } matches
+rounds-lineups = Line-ups…
+rounds-lineups-title = Line-ups
+rounds-lineups-help = Boards follow the order chosen here. Results already entered are kept for boards whose players did not change.
+rounds-team-keys-hint = Select a board and type 1, 0 or 5 (=) for 1-0, 0-1, ½-½ · + / - forfeits · Delete clears. Match rows show the running score.
 rounds-violations-title = These pairings break the rules
 rounds-violations-help = Chess Organiser found these problems. Fix them, or pair anyway if the arbiter decided so.
 rounds-violations-fix = Go back and fix
@@ -255,6 +272,8 @@ rounds-violations-force = Pair anyway
 list-name-pairings = Pairings
 list-name-standings = Standings
 list-name-crosstable = Crosstable
+list-name-team-pairings = Team pairings
+list-name-team-standings = Team standings
 lists-language = Language
 lists-print = Print / PDF…
 lists-format = Export format
@@ -265,7 +284,6 @@ lists-print-hint = Print / PDF opens the list in your browser; use its print dia
 
 ## Teams and prizes
 
-teams-feature = Team pairing, line-ups and team standings
 teams-add = Add team
 teams-edit = Edit team
 teams-name = Team name
@@ -275,7 +293,7 @@ teams-board-order = Board order (in the order ticked)
 teams-empty = No teams yet.
 teams-individual-note = This is an individual tournament; teams here are only used for team prizes.
 teams-remove-confirm = Remove team { $name }?
-prizes-feature = Prize lists with categories and shared prizes
+teams-standings = Team standings after round { $round }
 prizes-add = Add category
 prizes-category = Category
 prizes-filter = Who is eligible
@@ -290,29 +308,43 @@ prizes-born-from = born ≥ { $year }
 prizes-born-until = born ≤ { $year }
 prizes-unrated = Unrated only
 prizes-women = Women
+prizes-winners = Prize winners after round { $round }
+prizes-one-each = Each player receives at most one prize, in the order the categories are listed.
 
 ## Ratings and publishing
 
 ratings-trf-title = FIDE rating report
 ratings-trf-help = Export the tournament as a TRF-2026 file for the federation's rating officer.
 ratings-changes-title = Rating changes
-ratings-changes-feature = Rating-change calculation (FIDE B.02)
 ratings-changes-help = Expected scores, K-factors and the rating change of every rated player.
 ratings-calculate = Calculate rating changes
 ratings-norms-title = Title norms
-ratings-norms-feature = GM / IM / WGM / WIM norm checks (FIDE B.01)
 ratings-check-norms = Check norms
-publish-feature = Live pairings and standings website
+ratings-norms-help = Checks the FIDE B.01 requirements for a GM, IM, WGM or WIM norm over the rounds played so far: games, rated and titled opponents, federations and performance.
+ratings-norms-none = No norm applies to this player.
+ratings-norm-achieved = norm achieved
+ratings-norm-missed = not achieved
+ratings-norm-stats = { $games } games · average opponent rating { $aro } · performance { $perf }
+ratings-first-rating = first rating { $rating }
 publish-help = Upload pairings and standings to a results website so players can follow the tournament on their phones. Everything keeps working offline; uploads happen when a connection is available.
 publish-server = Results server
 publish-token = Upload token
 publish-upload = Upload now
+publish-done = Uploaded. Players can follow the tournament online.
+publish-live-at = Live at
+publish-server-title = Running a results server
+publish-server-help = The co-publish program serves the uploaded tournaments. Run it on any server behind HTTPS with an upload token; the address and the token go in the fields above.
 
 ## Settings and shortcuts
 
 settings-language = Language
 settings-theme = Appearance
-settings-translations-note = French, Arabic, Swahili, Portuguese and Spanish are being translated (Phase 5); untranslated text appears in English.
+settings-translations-note = Printed lists can use a different language from the program: choose it on the Lists screen. Any text not yet translated appears in English.
+settings-updates = Updates
+settings-check-updates = Check for updates
+settings-install-update = Install version { $version } and restart
+settings-updates-disabled = This build ({ $version }) does not update itself; download new versions from the project website.
+settings-up-to-date = You have the latest version ({ $version }).
 theme-system = Same as system
 theme-light = Light
 theme-dark = Dark
@@ -330,3 +362,43 @@ shortcut-undo = Undo the last tournament change
 shortcut-redo = Redo
 shortcut-pair = Pair the next round
 shortcut-sections = Jump to a section
+
+## Welcome screen
+
+welcome-sample-title = New here? Explore with sample data
+welcome-sample-body = Opens a 25-player rapid open with four rounds played (the last one half entered), a late entry, a withdrawal, byes, prize categories and a sample player database. Everything is fictional; try anything, undo anything.
+welcome-sample-load = Load sample tournament
+welcome-tour = Tour of the program
+welcome-features = What Chess Organiser does
+welcome-free = free for every federation and club
+welcome-shot-rounds = Pairings & results
+welcome-shot-rounds-body = Enter results straight from the keyboard: 1, 0 or 5 on each board, + and − for forfeits. The cursor moves to the next board, and every change can be undone.
+welcome-shot-players = Players
+welcome-shot-players-body = Register players by hand or from your rating list, with titles, federations and ratings. Late entries, withdrawals, requested byes and pauses are handled per round.
+welcome-shot-lists = Lists
+welcome-shot-lists-body = Starting rank, pairings and standings, ready to print, save as PDF or export, in the language of your choice.
+welcome-shot-overview = Overview
+welcome-shot-overview-body = See where the tournament stands at a glance and what to do next.
+feat-files = One file per tournament
+feat-files-body = Saved after every change and safe if the power fails. Works offline; copy or e-mail it like any document. Unlimited undo with a full audit trail.
+feat-players = Registration
+feat-players-body = Players from the FIDE or national list, late entries with zero- or half-point byes, withdrawals, pauses and FIDE starting-rank order.
+feat-results = Fast result entry
+feat-results-body = Keyboard-first result entry, corrections in earlier rounds and manual pairing with rule checks for repeats, clubmates and byes.
+feat-lists = Lists and printing
+feat-lists-body = Pairings, standings, crosstables, scorecards, board cards and prize lists to print, save as PDF or export as HTML, CSV and Excel.
+feat-trf = FIDE rating reports
+feat-trf-body = Export and import TRF-2026 files for the rating officer and for moving events between programs.
+feat-pairing = Automatic FIDE pairings
+feat-pairing-body = Dutch and Burstein systems checked against FIDE's endorsed engine, Baku acceleration, Dubov, Lim, Monrad and round robins with Berger tables.
+feat-teams = Teams and prizes
+feat-teams-body = Team Swiss and team round robin with line-ups and team tie-breaks; prize categories for women, juniors and rating bands.
+feat-ratings = Ratings and norms
+feat-ratings-body = Every FIDE tie-break, rating changes by FIDE B.02 and GM, IM, WGM and WIM norm checks.
+feat-languages = Languages and live results
+feat-languages-body = French, Arabic, Swahili, Portuguese and Spanish, and a live results website for players' phones.
+sample-replace-confirm = Close the current tournament and open a fresh copy of the sample tournament? Your tournament is saved and stays in Recent tournaments.
+
+setup-note-unverified = Pairings follow this system's rules with the same absolute criteria as the Dutch engine. Unlike the Dutch and Burstein engines, it has no endorsed reference program to be checked against, so review the pairings before publishing them.
+setup-note-monrad = Monrad pairs the top unpaired player with the next player below who has not been met yet. It is meant for club events, not FIDE-rated play.
+setup-note-team-swiss = Teams are paired with the Dutch criteria on match points (or game points), White on board 1 being the team's colour.

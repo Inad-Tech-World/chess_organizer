@@ -3,12 +3,13 @@
 //! returns the new view.
 
 pub mod lists;
-pub mod planned;
 pub mod player_db;
 pub mod players;
+pub mod reports;
 pub mod rounds;
 pub mod teams_prizes;
 pub mod tournament;
+pub mod update;
 
 use crate::error::CmdResult;
 use crate::state::{AppState, TournamentView};

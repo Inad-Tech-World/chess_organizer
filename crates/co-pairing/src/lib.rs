@@ -6,6 +6,7 @@
 
 pub mod baku;
 pub mod berger;
+mod bracket;
 pub mod burstein;
 pub mod check;
 pub mod dubov;
@@ -14,6 +15,7 @@ pub mod lim;
 pub mod manual;
 pub mod matching;
 pub mod monrad;
+mod swiss_model;
 pub mod team_rr;
 pub mod team_swiss;
 

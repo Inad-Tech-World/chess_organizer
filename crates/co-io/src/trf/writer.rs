@@ -146,6 +146,22 @@ pub fn write(t: &Tournament) -> String {
         out.push(b.finish());
     }
 
+    // TRF-2026 team records: team number, name and members' pairing numbers
+    // in board order. The optional summary columns (42-72) are left blank;
+    // they are recomputed from the games by any reader.
+    for (i, team) in t.teams.iter().enumerate() {
+        let members: Vec<u32> = team
+            .members
+            .iter()
+            .filter_map(|m| ids.get(m).copied())
+            .collect();
+        let mut b = LineBuf::new("310");
+        b.put_right(5, 7, &format!("{:03}", i + 1));
+        b.put_left(9, 40, &team.name);
+        put_ids(&mut b, 74, &members);
+        out.push(b.finish());
+    }
+
     let mut s = out.join("\n");
     s.push('\n');
     s
@@ -197,6 +213,13 @@ fn player_line(
             Some(Pairing::Bye { kind, .. }) => ("0000".to_string(), '-', bye_char(*kind)),
             None if round.number < p.joined_round => {
                 ("0000".to_string(), '-', bye_char(p.late_entry_bye))
+            }
+            // A team bye: every member of the team gets the pairing-allocated bye.
+            None if round.matches.iter().any(|m| {
+                m.away.is_none() && t.team(m.home).is_some_and(|tm| tm.members.contains(&p.id))
+            }) =>
+            {
+                ("0000".to_string(), '-', bye_char(ByeKind::PairingAllocated))
             }
             None => ("0000".to_string(), '-', 'Z'),
         };
