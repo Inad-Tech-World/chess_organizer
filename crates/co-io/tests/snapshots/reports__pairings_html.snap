@@ -1,0 +1,60 @@
+---
+source: crates/co-io/tests/reports.rs
+expression: "render::html::render(&report).unwrap()"
+---
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kampala Club Championship 2026 – Pairings – round 3</title>
+<style>:root { color-scheme: light; }
+body { font: 13px/1.35 system-ui, -apple-system, "Segoe UI", "Noto Sans", sans-serif; color: #111; margin: 24px; }
+h1 { font-size: 18px; margin: 0 0 2px; }
+h2 { font-size: 15px; font-weight: 600; margin: 0 0 8px; }
+dl { display: flex; flex-wrap: wrap; gap: 4px 20px; margin: 0 0 12px; font-size: 12px; }
+dl div { display: flex; gap: 6px; }
+dt { color: #555; }
+dd { margin: 0; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th, td { padding: 3px 6px; border-bottom: 1px solid #ddd; white-space: nowrap; }
+th { text-align: start; border-bottom: 2px solid #333; font-weight: 600; }
+.left { text-align: start; }
+.right { text-align: end; }
+.center { text-align: center; }
+tbody tr:nth-child(even) { background: #f6f6f6; }
+.note { color: #555; font-size: 11px; margin: 6px 0 0; }
+footer { margin-top: 16px; color: #777; font-size: 11px; }
+@media print {
+  body { margin: 0; }
+  thead { display: table-header-group; }
+  tr { break-inside: avoid; }
+  tbody tr:nth-child(even) { background: none; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Kampala Club Championship 2026</h1>
+  <h2>Pairings – round 3</h2>
+  <dl>
+    <div><dt>City</dt><dd>Kampala</dd></div>
+    <div><dt>Dates</dt><dd>2026-10-03 – 2026-10-04</dd></div>
+    <div><dt>Chief arbiter</dt><dd>Jane Arbiter</dd></div>
+    <div><dt>Time control</dt><dd>60 min + 30 s&#x2f;move</dd></div>
+  </dl>
+</header>
+<table dir="ltr">
+  <thead>
+    <tr><th class="right">Bo.</th><th class="right">SNo.</th><th class="left">White</th><th class="right">Rtg</th><th class="center">Pts.</th><th class="center">Result</th><th class="center">Pts.</th><th class="right">SNo.</th><th class="left">Black</th><th class="right">Rtg</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="right" dir="ltr">1</td><td class="right" dir="ltr">1</td><td class="left">Okello, David</td><td class="right" dir="ltr">2310</td><td class="center" dir="ltr">2</td><td class="center" dir="ltr">1-0</td><td class="center" dir="ltr">1½</td><td class="right" dir="ltr">6</td><td class="left">Ssempala, Joseph</td><td class="right" dir="ltr"></td></tr>
+    <tr><td class="right" dir="ltr">2</td><td class="right" dir="ltr">2</td><td class="left">Nakato, Grace</td><td class="right" dir="ltr">2105</td><td class="center" dir="ltr">1</td><td class="center" dir="ltr">+&#x2f;-</td><td class="center" dir="ltr">1</td><td class="right" dir="ltr">7</td><td class="left">Tumusiime, Alex</td><td class="right" dir="ltr"></td></tr>
+    <tr><td class="right" dir="ltr">3</td><td class="right" dir="ltr">3</td><td class="left">Mugisha, Brian</td><td class="right" dir="ltr">1950</td><td class="center" dir="ltr">1</td><td class="center" dir="ltr">0-1</td><td class="center" dir="ltr">1</td><td class="right" dir="ltr">4</td><td class="left">Wanyama, Peter</td><td class="right" dir="ltr">2040</td></tr>
+    <tr><td class="right" dir="ltr"></td><td class="right" dir="ltr">5</td><td class="left">Achieng, Mary</td><td class="right" dir="ltr">1820</td><td class="center" dir="ltr">½</td><td class="center" dir="ltr">½</td><td class="center" dir="ltr"></td><td class="right" dir="ltr"></td><td class="left">half-point bye</td><td class="right" dir="ltr"></td></tr>
+  </tbody>
+</table>
+<footer>Produced with Chess Organiser</footer>
+</body>
+</html>

@@ -1,0 +1,12 @@
+---
+source: crates/co-io/tests/reports.rs
+expression: "String::from_utf8(render::render(&report, Format::Csv).unwrap()).unwrap()"
+---
+SNo.,Title,Name,FED,Rtg,FIDE ID,Club
+1,IM,"Okello, David",UGA,2310,1000011,
+2,WFM,"Nakato, Grace",UGA,2105,1000022,
+3,,"Mugisha, Brian",RWA,1950,1000033,
+4,FM,"Wanyama, Peter",KEN,2040,1000044,
+5,,"Achieng, Mary",KEN,1820,1000055,
+6,,"Ssempala, Joseph",UGA,,,
+7,,"Tumusiime, Alex",UGA,,,

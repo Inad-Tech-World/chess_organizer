@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="{{ r.lang }}" dir="{{ 'rtl' if r.rtl else 'ltr' }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ r.heading }} – {{ r.title }}</title>
+<style>{{ css | safe }}</style>
+</head>
+<body>
+<header>
+  <h1>{{ r.heading }}</h1>
+  <h2>{{ r.title }}</h2>
+  {%- if r.info %}
+  <dl>
+    {%- for item in r.info %}
+    <div><dt>{{ item[0] }}</dt><dd>{{ item[1] }}</dd></div>
+    {%- endfor %}
+  </dl>
+  {%- endif %}
+</header>
+<table{% if r.ltr_table %} dir="ltr"{% endif %}>
+  <thead>
+    <tr>{% for c in r.columns %}<th class="{{ c.align }}">{{ c.label }}</th>{% endfor %}</tr>
+  </thead>
+  <tbody>
+    {%- for row in r.rows %}
+    <tr>{% for cell in row %}{% set align = r.columns[loop.index0].align %}<td class="{{ align }}"{% if align != "left" %} dir="ltr"{% endif %}>{{ cell }}</td>{% endfor %}</tr>
+    {%- endfor %}
+  </tbody>
+</table>
+{%- for n in r.notes %}
+<p class="note">{{ n }}</p>
+{%- endfor %}
+<footer>{{ r.footer }}</footer>
+</body>
+</html>

@@ -1,0 +1,6 @@
+[alias]
+xtask = "run --quiet --package xtask --"
+
+[env]
+# ts-rs writes TypeScript bindings here when `cargo test --features ts` runs.
+TS_RS_EXPORT_DIR = { value = "app/src/lib/bindings", relative = true }

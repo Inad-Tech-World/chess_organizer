@@ -1,0 +1,17 @@
+[package]
+name = "xtask"
+version = "0.0.0"
+edition.workspace = true
+publish = false
+
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+co-core.workspace = true
+co-i18n.workspace = true
+co-io.workspace = true
+co-pairing.workspace = true
+serde_json.workspace = true
+
+[lints]
+workspace = true

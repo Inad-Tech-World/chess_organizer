@@ -1,0 +1,16 @@
+[package]
+name = "co-rating"
+description = "Chess Organiser FIDE rating change calculation and title norm checks"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+co-core.workspace = true
+serde.workspace = true
+
+[lints]
+workspace = true

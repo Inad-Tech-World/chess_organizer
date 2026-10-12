@@ -1,0 +1,13 @@
+Chess Organiser
+Copyright (C) 2026 Chess Organiser contributors
+
+Chess Organiser is licensed under the GNU General Public License v3.0 or later.
+See LICENSE.
+
+The FIDE (Dutch) pairing engine in crates/co-pairing follows the approach of
+bbpPairings (https://github.com/BieremaBoyzProgramming/bbpPairings), which is
+licensed under the Apache License, Version 2.0. bbpPairings is also used,
+unmodified and outside the shipped application, as a test oracle.
+
+"FIDE" is a trademark of the Fédération Internationale des Échecs. Chess
+Organiser is not affiliated with FIDE or with the makers of Swiss-Manager.

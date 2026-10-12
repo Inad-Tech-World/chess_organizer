@@ -1,0 +1,19 @@
+[package]
+name = "co-pairing"
+description = "Chess Organiser pairing engines: FIDE Dutch, Dubov, Burstein, Lim, Monrad, Berger and team systems"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+co-core.workspace = true
+thiserror.workspace = true
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+uuid.workspace = true

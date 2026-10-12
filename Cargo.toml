@@ -1,0 +1,71 @@
+[workspace]
+resolver = "3"
+members = [
+    "crates/co-core",
+    "crates/co-pairing",
+    "crates/co-tiebreak",
+    "crates/co-rating",
+    "crates/co-io",
+    "crates/co-store",
+    "crates/co-i18n",
+    "crates/co-cli",
+    "crates/co-publish",
+    "xtask",
+    "app/src-tauri",
+]
+default-members = [
+    "crates/co-core",
+    "crates/co-pairing",
+    "crates/co-tiebreak",
+    "crates/co-rating",
+    "crates/co-io",
+    "crates/co-store",
+    "crates/co-i18n",
+    "crates/co-cli",
+    "crates/co-publish",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.90"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/chess-organiser/chess-organiser"
+authors = ["Chess Organiser contributors"]
+
+[workspace.dependencies]
+co-core = { path = "crates/co-core" }
+co-pairing = { path = "crates/co-pairing" }
+co-tiebreak = { path = "crates/co-tiebreak" }
+co-rating = { path = "crates/co-rating" }
+co-io = { path = "crates/co-io" }
+co-store = { path = "crates/co-store" }
+co-i18n = { path = "crates/co-i18n" }
+
+anyhow = "1"
+axum = "0.8"
+chrono = { version = "0.4", default-features = false, features = ["std", "clock", "serde"] }
+clap = { version = "4", features = ["derive"] }
+fluent-bundle = "0.16"
+insta = "1"
+minijinja = { version = "2", features = ["loader"] }
+rusqlite = { version = "0.40", features = ["bundled"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tempfile = "3"
+thiserror = "2"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "net"] }
+ts-rs = { version = "12", features = ["chrono-impl", "uuid-impl"] }
+unic-langid = { version = "0.9", features = ["macros"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true

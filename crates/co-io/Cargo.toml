@@ -1,0 +1,26 @@
+[package]
+name = "co-io"
+description = "Chess Organiser import/export: TRF, FIDE rating lists, lists and reports (HTML, PDF, CSV, XLSX)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+chrono.workspace = true
+co-core.workspace = true
+co-i18n.workspace = true
+co-tiebreak.workspace = true
+minijinja.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+uuid.workspace = true
+
+[dev-dependencies]
+insta.workspace = true
+serde_json.workspace = true
+
+[lints]
+workspace = true
