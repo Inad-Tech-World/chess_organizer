@@ -2,6 +2,7 @@
   import '../app.css';
   import { onMount, type Snippet } from 'svelte';
   import { goto } from '$app/navigation';
+  import Welcome from '$lib/components/Welcome.svelte';
   import { page } from '$app/state';
   import { listen } from '@tauri-apps/api/event';
   import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
@@ -56,8 +57,10 @@
           listen('files-opened', () => openPending().catch(showError))
         );
         app.view = await api.current();
+        app.loaded = true;
         await openPending();
       } catch (e) {
+        app.loaded = true;
         showError(e);
       }
     })();
@@ -73,6 +76,14 @@
     if (e.shiftKey) redo();
     else undo();
   }
+
+  // Sections need an open tournament; without one, the start screen is shown
+  // and the address moves back to it.
+  const FREE = ['/', '/index.html', '/settings', '/player-db'];
+  const free = $derived(FREE.includes(page.url.pathname));
+  $effect(() => {
+    if (app.loaded && !app.view && !free) goto('/', { replaceState: true });
+  });
 
   function isActive(href: string) {
     const path = page.url.pathname.replace(/\/index\.html$/, '/');
@@ -122,13 +133,10 @@
     {/if}
     <NoticeBar />
     <div class="content">
-      {#if app.view || ['/', '/index.html', '/settings', '/player-db'].includes(page.url.pathname)}
+      {#if app.view || free}
         {@render children()}
-      {:else}
-        <div class="page">
-          <p class="muted">{t('no-tournament-hint')}</p>
-          <a href="/">{t('nav-overview')}</a>
-        </div>
+      {:else if app.loaded}
+        <Welcome />
       {/if}
     </div>
   </main>

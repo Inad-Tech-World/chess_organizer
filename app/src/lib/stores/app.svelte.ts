@@ -12,6 +12,8 @@ export type Notice = {
 
 export const app = $state({
   view: null as TournamentView | null,
+  /** The backend has said whether a tournament is open in this window. */
+  loaded: false,
   notice: null as Notice | null,
   busy: false,
   /** Menu action for the current page to pick up, e.g. `players.add`. */
