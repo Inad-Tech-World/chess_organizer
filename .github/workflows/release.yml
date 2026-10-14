@@ -1,5 +1,5 @@
 # Installers for macOS (universal .dmg) and Windows (.exe and .msi),
-# published as a GitHub pre-release when a version tag is pushed:
+# published as a GitHub release when a version tag is pushed:
 #
 #   git tag v0.1.0 && git push origin v0.1.0
 #
@@ -57,7 +57,7 @@ jobs:
             id=$(gh api -X POST "repos/$GITHUB_REPOSITORY/releases" \
               -f tag_name="$GITHUB_REF_NAME" \
               -f name="Chess Organiser $GITHUB_REF_NAME" \
-              -F draft=true -F prerelease=true \
+              -F draft=true \
               -F body=@"$RUNNER_TEMP/notes.md" \
               --jq .id)
           fi

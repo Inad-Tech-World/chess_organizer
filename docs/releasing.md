@@ -2,7 +2,7 @@
 
 Installers are built by `.github/workflows/release.yml` (macOS universal
 `.dmg`/`.app`, Windows NSIS and MSI) when a version tag is pushed. The
-workflow creates a draft pre-release, uploads both platforms' installers
+workflow creates a draft release, uploads both platforms' installers
 and publishes it once both have succeeded. The release text comes from
 `.github/release-notes.md` (`<version>` is replaced with the version).
 
