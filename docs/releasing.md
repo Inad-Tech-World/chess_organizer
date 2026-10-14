@@ -1,20 +1,32 @@
 # Releasing
 
 Installers are built by `.github/workflows/release.yml` (macOS universal
-`.dmg`/`.app`, Windows NSIS and MSI) and attached to a draft GitHub
-release. The workflow runs by hand (Actions › Release › Run workflow) once
-the repository variable `RELEASES_ENABLED` is `true`.
+`.dmg`/`.app`, Windows NSIS and MSI) when a version tag is pushed. The
+workflow creates a draft pre-release, uploads both platforms' installers
+and publishes it once both have succeeded. The release text comes from
+`.github/release-notes.md` (`<version>` is replaced with the version).
 
-Without any secrets the installers are **unsigned**: macOS Gatekeeper and
-Windows SmartScreen warn when they are opened, and the program cannot
-update itself. Signing needs accounts that only the project's maintainers
-can hold, so it is set up separately.
+Without any secrets the installers are **unsigned**: the macOS app is only
+ad-hoc signed (`signingIdentity: "-"`), so Gatekeeper asks the user to
+allow it under Privacy & Security; Windows SmartScreen warns once; and the
+program cannot update itself. Signing needs accounts that only the
+project's maintainers can hold, so it is set up separately.
 
-## 1. Version
+## 1. Version and tag
 
 Bump the version in `Cargo.toml` (`[workspace.package] version`),
-`app/src-tauri/tauri.conf.json` and `app/package.json`, and add the
-release notes to the GitHub release draft.
+`app/src-tauri/tauri.conf.json` and `app/package.json`, commit, then tag
+and push:
+
+```bash
+git tag v0.2.0 && git push origin main v0.2.0
+```
+
+The tag must be `v` followed by the version in `tauri.conf.json`, or the
+workflow stops. A run that failed for a passing reason (a network error)
+can be re-run from the Actions page. To ship a fix, move the tag to the
+fixed commit (`git tag -f v0.2.0 && git push -f origin v0.2.0`); either
+way the run reuses the existing draft release.
 
 ## 2. macOS signing and notarisation
 
@@ -27,7 +39,9 @@ Needs an Apple Developer Program membership.
    - `APPLE_SIGNING_IDENTITY`, e.g. `Developer ID Application: Name (TEAMID)`
    - `APPLE_ID`, `APPLE_PASSWORD` (an app-specific password), `APPLE_TEAM_ID`
 
-`tauri-action` signs and notarises when these are present.
+`tauri-action` signs and notarises when these are present;
+`APPLE_SIGNING_IDENTITY` replaces the ad-hoc identity from
+`tauri.conf.json`.
 
 ## 3. Windows code signing
 

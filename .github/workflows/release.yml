@@ -1,9 +1,14 @@
-# Installers for macOS (universal) and Windows, attached to a draft GitHub
-# release. Runs by hand once the repository variable RELEASES_ENABLED is
-# "true". See docs/releasing.md.
+# Installers for macOS (universal .dmg) and Windows (.exe and .msi),
+# published as a GitHub pre-release when a version tag is pushed:
 #
-# Without secrets the installers are unsigned and have no in-app updater.
-# Optional repository secrets:
+#   git tag v0.1.0 && git push origin v0.1.0
+#
+# The tag must match the version in app/src-tauri/tauri.conf.json. The
+# release stays a draft until both platforms have uploaded their installers.
+# See docs/releasing.md.
+#
+# Without secrets the installers are unsigned (the macOS app is ad-hoc
+# signed) and have no in-app updater. Optional repository secrets:
 #   APPLE_CERTIFICATE, APPLE_CERTIFICATE_PASSWORD, APPLE_SIGNING_IDENTITY,
 #   APPLE_ID, APPLE_PASSWORD, APPLE_TEAM_ID        (macOS signing/notarising)
 #   TAURI_SIGNING_PRIVATE_KEY, TAURI_SIGNING_PRIVATE_KEY_PASSWORD
@@ -13,11 +18,54 @@
 name: Release
 
 on:
-  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
 
 jobs:
-  release:
-    if: vars.RELEASES_ENABLED == 'true'
+  create-release:
+    name: Create draft release
+    runs-on: ubuntu-latest
+    outputs:
+      id: ${{ steps.release.outputs.id }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the tag matches the app version
+        run: |
+          version=$(jq -r .version app/src-tauri/tauri.conf.json)
+          if [ "$GITHUB_REF_NAME" != "v$version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match the app version $version"
+            exit 1
+          fi
+
+      # Reuses the draft when a failed run is re-run.
+      - name: Create the draft release
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          id=$(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" \
+            --jq "map(select(.tag_name == \"$GITHUB_REF_NAME\")) | .[0].id // empty")
+          if [ -z "$id" ]; then
+            sed "s/<version>/${GITHUB_REF_NAME#v}/g" .github/release-notes.md > "$RUNNER_TEMP/notes.md"
+            id=$(gh api -X POST "repos/$GITHUB_REPOSITORY/releases" \
+              -f tag_name="$GITHUB_REF_NAME" \
+              -f name="Chess Organiser $GITHUB_REF_NAME" \
+              -F draft=true -F prerelease=true \
+              -F body=@"$RUNNER_TEMP/notes.md" \
+              --jq .id)
+          fi
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build (${{ matrix.os }})
+    needs: create-release
     strategy:
       fail-fast: false
       matrix:
@@ -27,8 +75,6 @@ jobs:
           - os: windows-latest
             target: ''
     runs-on: ${{ matrix.os }}
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -45,9 +91,13 @@ jobs:
           cache-dependency-path: app/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
         working-directory: app
-      - uses: tauri-apps/tauri-action@v0
+
+      # Tauri treats a variable that is set but empty as configured (and then
+      # fails to import an empty certificate), so pass only the secrets that
+      # exist.
+      - name: Load signing secrets
+        shell: bash
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
@@ -56,13 +106,34 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          for name in APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_SIGNING_IDENTITY \
+                      APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID \
+                      TAURI_SIGNING_PRIVATE_KEY TAURI_SIGNING_PRIVATE_KEY_PASSWORD; do
+            if [ -n "${!name}" ]; then
+              printf '%s<<_END_\n%s\n_END_\n' "$name" "${!name}" >> "$GITHUB_ENV"
+            fi
+          done
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           projectPath: app
-          tagName: v__VERSION__
-          releaseName: Chess Organiser v__VERSION__
-          releaseDraft: true
-          prerelease: true
+          releaseId: ${{ needs.create-release.outputs.id }}
           args: >-
             ${{ matrix.target }}
             ${{ vars.UPDATER_ENABLED == 'true' && '--features updater --config src-tauri/tauri.updater.conf.json' || '' }}
           includeUpdaterJson: ${{ vars.UPDATER_ENABLED == 'true' }}
+
+  publish-release:
+    name: Publish release
+    needs: [create-release, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish the draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/${{ needs.create-release.outputs.id }}" \
+            -F draft=false --jq .html_url
